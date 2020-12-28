@@ -8,18 +8,56 @@
       - ca_root_nss
     state: present
 
+- name: Get current caddy version
+  command: caddy version
+  register: caddy_current_version
+  ignore_errors: true
+
+- name: Get latest caddy release
+  uri:
+    url: https://api.github.com/repos/caddyserver/caddy/releases/latest
+    return_content: true
+  register: caddy_latest_release
+
+
 - name: Install xcaddy
-  command: go get -u github.com/caddyserver/xcaddy/cmd/xcaddy
+  when: (caddy_current_version.rc != 0) or (caddy_current_version.stdout.split(' ')[0] != caddy_latest_release.json.tag_name)
+  block:
+    - name: Get latest xcaddy release
+      uri:
+        url: https://api.github.com/repos/caddyserver/xcaddy/releases/latest
+        return_content: true
+      register: xcaddy_latest_release
+
+    - name: Download xcaddy
+      get_url:
+        url: "https://github.com/caddyserver/xcaddy/releases/download/{{ xcaddy_latest_release.json.tag_name }}/xcaddy_{{ xcaddy_latest_release.json.tag_name.strip('v') }}_freebsd_amd64.tar.gz"
+        checksum: "sha512:https://github.com/caddyserver/xcaddy/releases/download/{{ xcaddy_latest_release.json.tag_name }}/xcaddy_{{ xcaddy_latest_release.json.tag_name.strip('v') }}_checksums.txt"
+        dest: /tmp/xcaddy.tar.gz
+
+    - name: Extract xcaddy
+      command:
+        warn: false  # unarchive requires GNU tar
+        cmd: tar xvzf /tmp/xcaddy.tar.gz -C /usr/local/bin
 
 - name: Build caddy
-  command: /root/go/bin/xcaddy build --with github.com/caddy-dns/cloudflare
+  when: (caddy_current_version.rc != 0) or (caddy_current_version.stdout.split(' ')[0] != caddy_latest_release.json.tag_name)
+  block:
+     - name: Build caddy
+       command:
+         cmd: xcaddy build {{ caddy_latest_release.json.tag_name }} --with github.com/caddy-dns/cloudflare
+         chdir: /tmp
 
-- name: Copy caddy to /usr/local/bin
-  copy:
-    remote_src: true
-    src: /root/caddy
-    dest: /usr/local/bin/caddy
-    mode: 'u=rwx,g=rx,o=rx'
+     - name: Copy caddy to /usr/local/bin
+       copy:
+         remote_src: true
+         src: /tmp/caddy
+         dest: /usr/local/bin/caddy
+         mode: 'u=rwx,g=rx,o=rx'
+       notify:
+         - enable caddy
+         - restart caddy
+
 
 - name: Create caddy user
   user:
@@ -33,6 +71,8 @@
     owner: root
     group: wheel
     mode: 'u=rx,g=rx,o=x'
+  notify:
+    - restart caddy
 
 - name: Template Caddyfile
   template:
@@ -41,13 +81,16 @@
     owner: root
     group: wheel
     validate: /root/caddy validate --adapter caddyfile --config %s
+  notify:
+    - reload caddy
 
-- name: Enable caddy service
-  service:
-    name: caddy
-    enabled: true
 
-- name: reload caddy service
-  service:
-    name: caddy
-    state: reloaded
+# - name: Enable caddy service
+#   service:
+#     name: caddy
+#     enabled: true
+
+# - name: reload caddy service
+#   service:
+#     name: caddy
+#     state: reloaded

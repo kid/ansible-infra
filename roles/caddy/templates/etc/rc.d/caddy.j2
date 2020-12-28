@@ -26,11 +26,10 @@ desc="Caddy 2 is a powerful, enterprise-ready, open source web server with autom
 load_rc_config $name
 
 # Defaults
-: ${caddy_enable:=NO}
-: ${caddy_user:=caddy}
-: ${caddy_group:=group}
-: ${caddy_config:=/usr/local/etc/caddy/Caddyfile}
-: ${caddy_adapter:=caddyfile}
+: ${caddy_enable:="NO"}
+: ${caddy_user:="caddy"}
+: ${caddy_config:="/usr/local/etc/caddy/Caddyfile"}
+: ${caddy_adapter:="caddyfile"}
 : ${caddy_extra_flags:=""}
 : ${caddy_logfile="/var/log/caddy.log"}
 
@@ -42,6 +41,7 @@ required_files="${caddy_config} ${command}"
 
 # Extra Commands
 extra_commands="validate reload"
+stop_cmd="${command} stop >> ${caddy_logfile} 2>&1"
 start_cmd="${command} start ${caddy_flags} ${caddy_extra_flags} --pidfile ${pidfile} >> ${caddy_logfile} 2>&1"
 validate_cmd="${command} validate ${caddy_flags}"
 reload_cmd="${command} reload ${caddy_flags}"
