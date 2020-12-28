@@ -1,11 +1,15 @@
+[all:vars]
+ansible_ssh_user=ansible
+ansible_python_interpreter=/usr/local/bin/python
+
+[jails]
+caddy ansible_ssh_host=caddy@truenas.adm
+
+[jails:vars]
+ansible_ssh_user=ansible
+ansible_connection=sshjail
+ansible_become=true
+ansible_remote_tmp=/tmp/.ansible/tmp
+
 [truenas]
-truenas.adm ansible_python_interpreter=/usr/local/bin/python 
-
-[jails:children]
-caddy
-
-[caddy]
-foo@truenas.adm ansible_connection=sshjail ansible_python_interpreter=/usr/local/bin/python ansible_become=yes
-
-[foo]
-foo@truenas.adm ansible_connection=sshjail ansible_python_interpreter=/usr/local/bin/python ansible_become=yes
+truenas.adm

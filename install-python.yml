@@ -1,0 +1,16 @@
+---
+
+- hosts: jails
+  gather_facts: false
+  tasks:
+    - name: Configure latest ports branch
+      raw: |
+        mkdir -p /usr/local/etc/pkg/repos
+        cat <<EOT > /usr/local/etc/pkg/repos/FreeBSD.conf
+        FreeBSD: {
+          url: "pkg+http://pkg.FreeBSD.org/\${ABI}/latest",
+          enabled: yes
+        }
+        EOT
+        ASSUME_ALWAYS_YES=yes pkg bootstrap
+        ASSUME_ALWAYS_YES=yes pkg install python

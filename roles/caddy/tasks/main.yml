@@ -1,0 +1,53 @@
+---
+
+- name: Install dependencies
+  package:
+    name:
+      - git
+      - go
+      - ca_root_nss
+    state: present
+
+- name: Install xcaddy
+  command: go get -u github.com/caddyserver/xcaddy/cmd/xcaddy
+
+- name: Build caddy
+  command: /root/go/bin/xcaddy build --with github.com/caddy-dns/cloudflare
+
+- name: Copy caddy to /usr/local/bin
+  copy:
+    remote_src: true
+    src: /root/caddy
+    dest: /usr/local/bin/caddy
+    mode: 'u=rwx,g=rx,o=rx'
+
+- name: Create caddy user
+  user:
+    name: caddy
+    shell: /usr/sbin/nologin
+
+- name: Template RC file
+  template:
+    src: etc/rc.d/caddy.j2
+    dest: /usr/local/etc/rc.d/caddy
+    owner: root
+    group: wheel
+    mode: 'u=rx,g=rx,o=x'
+
+- name: Template Caddyfile
+  template:
+    src: etc/caddy/Caddyfile.j2
+    dest: /usr/local/etc/caddy/Caddyfile
+    owner: root
+    group: wheel
+    validate: /root/caddy validate --adapter caddyfile --config %s
+
+- name: Enable caddy service
+  service:
+    name: caddy
+    enabled: true
+
+- name: reload caddy service
+  service:
+    name: caddy
+    state: reloaded
