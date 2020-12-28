@@ -1,0 +1,11 @@
+[truenas]
+truenas.adm ansible_python_interpreter=/usr/local/bin/python 
+
+[jails:children]
+caddy
+
+[caddy]
+foo@truenas.adm ansible_connection=sshjail ansible_python_interpreter=/usr/local/bin/python ansible_become=yes
+
+[foo]
+foo@truenas.adm ansible_connection=sshjail ansible_python_interpreter=/usr/local/bin/python ansible_become=yes
