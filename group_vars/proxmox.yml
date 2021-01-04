@@ -1,0 +1,15 @@
+---
+
+ansible_user: root
+ansible_python_interpreter: /usr/bin/python3
+
+packages_repositories:
+  - repo: deb https://enterprise.proxmox.com/debian/pve buster pve-enterprise
+    filename: pve-enterprise
+    state: absent
+  - repo: deb http://download.proxmox.com/debian/pve buster pve-no-subscription
+    filename: pve-no-subscription
+
+packages:
+  - openvswitch
+  - htop

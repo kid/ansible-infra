@@ -1,5 +1,9 @@
 ---
 
 - hosts: caddy
-  roles: 
+  roles:
     - caddy
+
+- hosts: proxmox
+  roles:
+    - packages
