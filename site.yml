@@ -1,9 +1,102 @@
 ---
 
-- hosts: caddy
-  roles:
-    - caddy
-
+# - hosts: caddy
+#   roles:
+#     - caddy
+#
 - hosts: proxmox
   roles:
-    - packages
+    - common
+
+# TODO move this to common role
+- hosts: proxmox
+  tasks:
+    - name: create zfs datasets
+      community.general.zfs:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - tank/library
+        - tank/library/movies
+        - tank/library/series
+        - tank/downloads
+
+- hosts: containers
+  gather_facts: false
+  handlers:
+    - name: sleep
+      pause:
+        seconds: 30
+  tags:
+    - containers
+  tasks:
+    - name: create containers
+      delegate_to: localhost
+      register: container
+      notify:
+        - sleep
+      throttle: 1
+      community.general.proxmox:
+        vmid: "{{ vmid }}"
+        node: pve
+        api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+        api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+        api_host: "10.0.10.10"
+        timeout: 600
+        onboot: true
+        hostname: "{{ inventory_hostname }}"
+        unprivileged: true
+        storage: local-zfs
+        netif:
+          net0: 'name=eth0,bridge=vmbr0,ip=dhcp,ip6=dhcp,tag={{ vlan_tag }}'
+        ostemplate: "{{ ostemplate }}"
+        pubkey: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
+    - name: start containers
+      delegate_to: localhost
+      notify:
+        - sleep
+      community.general.proxmox:
+        vmid: "{{ vmid }}"
+        api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+        api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+        api_host: "10.0.10.10"
+        timeout: 600
+        state: started
+
+    - name: add containers to `need_ansible_prep` group
+      add_host:
+        name: "{{ item }}"
+        groups:
+          - need_ansible_prep
+      with_items: "{{ groups['containers'] }}"
+      when:
+        - container is changed
+
+    # - wait_for:
+    #     host: "{{ inventory_hostname }}.{{ domain_name }}"
+    #     state: present
+    #   when: container is changed
+
+    - meta: flush_handlers
+
+- import_playbook: prepare-for-ansible.yml
+
+- hosts: localhost
+  tasks:
+    - meta: refresh_inventory
+
+- hosts: all,!proxmox
+  roles:
+    - common
+
+- hosts: all,!proxmox
+  become: true
+  collections:
+    - devsec.hardening
+  roles:
+    - devsec.hardening.os_hardening
+    - devsec.hardening.ssh_hardening
+  tags:
+    - hardening
+

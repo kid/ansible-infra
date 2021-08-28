@@ -1,0 +1,25 @@
+---
+
+common_apt_repos_remove: []
+common_apt_repos: []
+
+common_apt_keys_remove: []
+common_apt_keys: []
+
+common_packages_remove: []
+common_packages:
+  - htop
+  - sudo
+
+common_users:
+  - name: kid
+    system: false
+    authorized_key: https://github.com/kid.keys
+    sudo: true
+
+  - name: ansible
+    uid: 1100
+    password_lock: true
+    shell: /bin/bash
+    system: false
+    authorized_key: https://github.com/kid.keys

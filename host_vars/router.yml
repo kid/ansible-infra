@@ -1,0 +1,38 @@
+---
+
+vlans:
+  - name: servers
+    vlan_id: 10
+    interface: loopback0
+  - name: media
+    vlan_id: 30
+    interface: loopback0
+  - name: adm
+    vlan_id: 99
+    interface: loopback0
+
+interfaces:
+  - routeros_if: ether1
+    desc: internet
+    ipv4: dhcp
+    nat:
+      role: outside
+  - routeros_if: loopback0
+    desc: local
+    ipv4: 10.99.0.1/16
+  - routeros_if: ether2
+    desc: pve
+    bridge: loopback0
+    pvid: 10
+    tagged_vlans:
+      - 30
+  - routeros_if: vlan10
+    desc: servers
+    ipv4: 10.0.10.1/24
+  - routeros_if: vlan30
+    desc: servers
+    ipv4: 10.0.30.1/24
+  - routeros_if: vlan99
+    desc: servers
+    ipv4: 10.99.0.1/16
+

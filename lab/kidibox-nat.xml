@@ -1,0 +1,14 @@
+<network>
+  <name>kidibox-nat</name>
+  <forward mode='nat'/>
+  <ip address='172.16.11.1' netmask='255.255.255.0'>
+    <dhcp>
+      <host mac='52:54:01:00:00:01' name='router.lab.kidibox.net' ip='172.16.11.10'/>
+    </dhcp>
+  </ip>
+  <route address="10.99.0.0" prefix="16" gateway="172.16.11.10"/>
+  <route address="10.0.10.0" prefix="24" gateway="172.16.11.10"/>
+  <route address="10.0.30.0" prefix="24" gateway="172.16.11.10"/>
+  <route address="10.0.100.0" prefix="24" gateway="172.16.11.10"/>
+</network>
+

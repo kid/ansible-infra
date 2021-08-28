@@ -1,0 +1,11 @@
+---
+
+common_apt_repos:
+  - deb https://downloads.plex.tv/repo/deb public main
+
+common_apt_keys:
+  - https://downloads.plex.tv/plex-keys/PlexSign.key
+
+common_packages:
+  - htop
+  - plexmediaserver

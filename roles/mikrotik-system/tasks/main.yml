@@ -1,0 +1,6 @@
+---
+
+- name: Set hostname
+  routeros_command:
+    commands:
+      - /system identity set name="{{ inventory_hostname }}"

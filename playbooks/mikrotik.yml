@@ -1,0 +1,11 @@
+# vim: set ft=yaml.ansible:
+---
+
+- hosts: mikrotik
+  gather_facts: false
+  roles:
+    - mikrotik-system
+    - mikrotik-interfaces
+    - mikrotik-dns
+    - mikrotik-nat
+

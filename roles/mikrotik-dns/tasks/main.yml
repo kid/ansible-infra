@@ -1,0 +1,6 @@
+---
+
+- name: Allow remote DNS requests
+  routeros_command:
+    commands:
+      - /ip dns set allow-remote-requests yes

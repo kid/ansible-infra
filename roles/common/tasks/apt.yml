@@ -1,0 +1,69 @@
+---
+
+- name: Remove unwanted packages repositories
+  become: true
+  apt_repository:
+    repo: "{{ item }}"
+    update_cache: false
+    state: absent
+  with_items: "{{ common_apt_repos_remove }}"
+
+- name: Add packages repositories
+  become: true
+  apt_repository:
+    repo: "{{ item }}"
+    update_cache: false
+  with_items: "{{ common_apt_repos }}"
+
+- name: Remove unwanted packages
+  become: true
+  apt:
+    name: "{{ common_packages_remove }}"
+    force: true
+    autoclean: true
+    autoremove: true
+    state: absent
+
+- name: Install gpg
+  become: true
+  apt:
+    name: gpg
+  when:
+    - common_apt_keys
+
+- name: Remove unwanted keys
+  become: true
+  apt_key:
+    id: "{{ item }}"
+    state: absent
+  with_items: "{{ common_apt_keys_remove }}"
+
+- name: Add wanted keys
+  become: true
+  apt_key:
+    url: "{{ item }}"
+  with_items: "{{ common_apt_keys }}"
+
+- name: Upgrade
+  become: true
+  apt:
+    cache_valid_time: 86400
+    update_cache: true
+    upgrade: dist
+
+- name: Install wanted packages
+  become: true
+  apt:
+    name: "{{ common_packages }}"
+    cache_valid_time: 86400
+    update_cache: true
+
+- name: Remove useless packages from the cache
+  become: true
+  apt:
+    autoclean: yes
+
+- name: Remove dependencies that are no longer required
+  become: true
+  apt:
+    autoremove: yes

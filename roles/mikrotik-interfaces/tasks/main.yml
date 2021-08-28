@@ -1,0 +1,127 @@
+---
+
+- set_fact:
+    vlans: "{{ vlans | rejectattr('vlan_id', 'equalto', item.vlan_id) + [item | combine({ 'tagged': [item.interface] })] }}"
+  loop: "{{ vlans }}"
+  when:
+    - item.interface is defined
+
+- set_fact:
+    vlans: "{{ vlans | rejectattr('vlan_id', 'equalto', item.1) + [vlans | selectattr('vlan_id', 'equalto', item.1) | combine({ 'tagged': [item.0.routeros_if] }, recursive=True, list_merge='append')] }}"
+  with_subelements:
+    - "{{ interfaces | selectattr('tagged_vlans', 'defined') }}"
+    - tagged_vlans
+
+- set_fact:
+    vlans: "{{ vlans | rejectattr('vlan_id', 'equalto', item.pvid) + [vlans | selectattr('vlan_id', 'equalto', item.pvid) | combine({ 'untagged': [item.routeros_if] }, recursive=True, list_merge='append')] }}"
+  loop: "{{ interfaces }}"
+  when:
+    - item.pvid is defined
+
+- set_fact:
+    vlans: "{{ vlans | sort(attribute='vlan_id') }}"
+
+- name: Create loopbacks
+  routeros_command:
+    commands:
+      - '/interface bridge add name="{{ item.routeros_if }}" comment="{{ item.desc }}"'
+  when:
+    - item.routeros_if is match('loopback.*')
+  loop: "{{ interfaces }}"
+  tags:
+    - loopback
+
+- name: Configure VLANs
+  routeros_command:
+    commands:
+      - '/interface vlan add name="vlan{{ item.vlan_id }}" interface="{{ item.interface }}" vlan-id="{{ item.vlan_id }}" comment="{{ item.name }}"'
+  when:
+    - vlans is defined
+  loop: "{{ vlans }}"
+  tags:
+    - vlans
+
+- name: Configure interfaces
+  routeros_command:
+    commands:
+      - '/interface set comment="{{ item.desc }}" [find where name="{{ item.routeros_if }}"]'
+  loop: "{{ interfaces }}"
+  tags:
+    - interfaces
+
+- name: Configure bridge ports
+  routeros_command:
+    commands:
+      - '/interface bridge port add bridge="{{ item.bridge }}" interface="{{ item.routeros_if }}" pvid="{{ item.pvid }}"'
+  when:
+    - item.bridge is defined
+    - item.pvid is defined
+  loop: "{{ interfaces }}"
+  tags:
+    - vlans
+
+- name: Configure bridge vlans
+  routeros_command:
+    commands:
+      - '/interface bridge vlan remove [find where bridge="{{ item.interface }}" and vlan-ids="{{ item.vlan_id }}"]'
+      - >-
+          /interface bridge vlan add
+            bridge="{{ item.interface }}"
+            vlan-ids="{{ item.vlan_id }}"
+            tagged="{{ item.tagged | default([]) | join(",") }}"
+            untagged="{{ item.untagged | default([]) | join(",") }}"
+  when:
+    - vlans is defined
+  loop: "{{ vlans }}"
+  tags:
+    - vlans
+
+- name: Configure IPv4 addressing
+  routeros_command:
+    commands:
+      - '/ip address add interface="{{ item.routeros_if }}" address="{{ item.ipv4 }}" comment="{{ item.desc }}"'
+  when:
+    - item.ipv4 is defined
+    - '"dhcp" not in item.ipv4'
+  loop: "{{ interfaces }}"
+  tags:
+    - ipv4
+
+- name: Configure IPv4 addressing - DHCP
+  routeros_command:
+    commands:
+      - '/ip dhcp-client add interface="{{ item.routeros_if }}" disabled=no comment="{{ item.desc }}"'
+  when:
+    - item.ipv4 is defined
+    - '"dhcp" in item.ipv4'
+  loop: "{{ interfaces }}"
+  tags:
+    - ipv4
+
+- name: Configure IPv6 addressing
+  routeros_command:
+    commands:
+      - '/ipv6 address add interface="{{ item.routeros_if }}" address="{{ item.ipv6 }}" comment="{{ item.desc }}"'
+  when: item.ipv6 is defined
+  loop: "{{ interfaces }}"
+  tags:
+    - ipv6
+
+- name: Enable VLAN filtering
+  routeros_command:
+    commands:
+      - '/interface bridge set "{{ item.routeros_if }}" vlan-filtering=yes'
+  when:
+    - item.routeros_if is match('loopback.*')
+  loop: "{{ interfaces }}"
+  tags:
+    - vlans
+
+- name: Interface cleanup
+  routeros_command:
+    commands:
+      - /ip address remove [find where invalid]
+  tags:
+    - ipv4
+    - ipv6
+
