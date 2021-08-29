@@ -12,10 +12,10 @@
   tags:
     - dhcp
 
-- name: Setup DHCP pool
+- name: Setup DHCP network
   routeros_command:
     commands:
-      - '/ip dhcp-server network add network="{{ item.ipv4 | ipaddr("0") }}" gateway="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}" dns-server="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}"'
+      - '/ip dhcp-server network add address="{{ item.ipv4 | ipaddr("0") }}" gateway="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}" dns-server="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}"'
   when:
     - item.dhcp is defined
     - item.dhcp

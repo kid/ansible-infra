@@ -48,8 +48,9 @@ interfaces:
     ipv4: 10.0.10.1/24
     dhcp: true
   - routeros_if: vlan30
-    desc: servers
+    desc: media
     ipv4: 10.0.30.1/24
+    dhcp: true
   - routeros_if: vlan99
-    desc: servers
+    desc: adm
     ipv4: 10.99.0.1/16
