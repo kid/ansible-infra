@@ -1,5 +1,7 @@
 ---
 
+ansible_user: ansible
+
 common_packages:
   - htop
   - vim

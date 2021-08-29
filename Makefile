@@ -1,5 +1,6 @@
 pattern ?= all
-inventories ?= inventories/
+inventories ?= inventories/lab
+extra_args ?=
 
 requirements:
 	ansible-galaxy install --force-with-deps -r requirements.yml
@@ -10,14 +11,24 @@ ping:
 facts:
 	ansible -i "$(inventories)" -m setup "$(pattern)"
 
-site:
-	ansible-playbook -i "$(inventories)" site.yml --diff
-
-mikrotik:
-	ansible-playbook -i "$(inventories)" mikrotik.yml --diff
-
 delete-containers:
-	ansible-playbook -i "$(inventories)" delete-containers.yml --diff
+	ansible-playbook -i "$(inventories)" --limit="$(pattern)" delete-containers.yml --diff
 
 lint:
 	ansible-lint
+
+prepare-for-ansible: playbook=prepare-for-ansible.yml
+prepare-for-ansible: playbook
+
+
+mikrotik: playbook=mikrotik.yml
+mikrotik: playbook
+
+proxmox: playbook=proxmox.yml
+proxmox: playbook
+
+site: playbook=site.yml
+site: playbook
+
+playbook:
+	ansible-playbook -i "$(inventories)" --limit="$(pattern)" "$(playbook)" --diff $(extra_args)

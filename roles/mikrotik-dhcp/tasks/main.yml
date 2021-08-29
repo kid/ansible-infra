@@ -1,0 +1,14 @@
+---
+
+- name: Setup DHCP pool
+  routeros_command:
+    commands:
+      - '/ip pool add name="{{ item.routeros_if }}" ranges="{{ item.ipv4 | ipaddr("11") }}-{{ item.ipv4 | ipaddr("254") }}"'
+      - '/ip dhcp-server network add network={{ item.ipv4 | ipaddr("net") }} gateway={{ item.ipv4 | ipaddr("1") }} dns-server={{ item.ipv4 | ipaddr("1") }}'
+      - '/ip dhcp-server add interface="{{ item.routeros_if }}" address-pool="{{ item.routeros_if }}'
+  when:
+    - item.dhcp is defined
+    - item.dhcp
+    - item.ipv4 is defined
+  loop: "{{ interfaces }}"
+

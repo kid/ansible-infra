@@ -4,3 +4,12 @@
   routeros_command:
     commands:
       - /system identity set name="{{ inventory_hostname }}"
+
+- name: Set license
+  routeros_command:
+    commands:
+      - /system licence renew level="{{ license_level }}" account="{{ mikrotik_account }}" password="{{ mikrotik_password }}"
+  when:
+    - license_level is defined
+    - mikrotik_account is defined
+    - mikrotik_password is defined

@@ -6,6 +6,7 @@
   roles:
     - mikrotik-system
     - mikrotik-interfaces
+    - mikrotik-dhcp
     - mikrotik-dns
     - mikrotik-nat
 

@@ -4,9 +4,10 @@ ansible_user: root
 # ansible_python_interpreter: /usr/bin/python3
 
 common_apt_repos_remove:
-  - deb https://enterprise.proxmox.com/debian/pve buster pve-enterprise
+  - repo: deb https://enterprise.proxmox.com/debian/pve bullseye pve-enterprise
+    filename: pve-enterprise
 common_apt_repos:
-  - deb http://download.proxmox.com/debian/pve buster pve-no-subscription
+  - deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription
 
 common_packages:
   - ifupdown2

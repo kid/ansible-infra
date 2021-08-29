@@ -3,7 +3,7 @@
 - name: Remove unwanted packages repositories
   become: true
   apt_repository:
-    repo: "{{ item }}"
+    repo: "{{ item.repo }}"
     update_cache: false
     state: absent
   with_items: "{{ common_apt_repos_remove }}"

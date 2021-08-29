@@ -1,6 +1,6 @@
 ---
 
-- hosts: need_ansible_prep
+- hosts: all
   gather_facts: false
   tasks:
     - set_fact:
@@ -8,10 +8,13 @@
         ansible_remote_tmp: /tmp/.root
 
     - apt:
+        cache_valid_time: 86400
         update_cache: true
+      ignore_errors: true
+
+    - apt:
         name:
           - sudo
-          - python3
 
     - name: Add user "ansible" to sudo
       lineinfile:
