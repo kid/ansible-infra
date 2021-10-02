@@ -15,7 +15,7 @@
 - name: Setup DHCP network
   routeros_command:
     commands:
-      - '/ip dhcp-server network add address="{{ item.ipv4 | ipaddr("0") }}" gateway="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}" dns-server="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}"'
+      - '/ip dhcp-server network add address="{{ item.ipv4 | ipaddr("0") }}" gateway="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}" dns-server="{{ item.ipv4 | ipaddr("1") | ipaddr("address") }}" domain="{{ item.desc }}.{{ top_level_domain }}"'
   when:
     - item.dhcp is defined
     - item.dhcp
@@ -27,7 +27,7 @@
 - name: Setup DHCP server
   routeros_command:
     commands:
-      - '/ip dhcp-server add interface="{{ item.routeros_if }}" address-pool="{{ item.routeros_if }}" name="{{ item.desc }}"'
+      - '/ip dhcp-server add interface="{{ item.routeros_if }}" address-pool="{{ item.routeros_if }}" name="{{ item.desc }}" lease-time=1d'
   when:
     - item.dhcp is defined
     - item.dhcp

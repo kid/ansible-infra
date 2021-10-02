@@ -1,0 +1,13 @@
+---
+
+common_apt_repos:
+  - deb https://apt.sonarr.tv/ubuntu focal main
+
+common_apt_keys:
+  - id: 1F4F90DE2A9B4BF8
+    keyserver: hkp://keyserver.ubuntu.com:80
+
+common_packages:
+  - htop
+  - vim
+  - sonarr

@@ -2,40 +2,7 @@
 
 - hosts: all
   gather_facts: false
-  tasks:
-    - set_fact:
-        ansible_ssh_user: root
-        ansible_remote_tmp: /tmp/.root
-
-    - apt:
-        cache_valid_time: 86400
-        update_cache: true
-      ignore_errors: true
-
-    - apt:
-        name:
-          - sudo
-
-    - name: Add user "ansible" to sudo
-      lineinfile:
-        path: /etc/sudoers.d/ansible
-        line: 'ansible ALL=(ALL) NOPASSWD: ALL'
-        state: present
-        mode: 0440
-        create: true
-        validate: 'visudo -cf %s'
-
-    - user:
-        name: ansible
-        uid: 1100
-        password_lock: true
-        shell: /bin/bash
-
-    - ansible.posix.authorized_key:
-        user: ansible
-        state: present
-        key: https://github.com/kid.keys
-
-    - set_fact:
-        ansible_ssh_user: ansible
-        ansible_remote_tmp: /tmp/.ansible
+  vars:
+    ansible_user: root
+  roles:
+    - prep-for-ansible

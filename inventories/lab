@@ -1,5 +1,27 @@
-[mikrotik]
-router ansible_host=172.16.11.10 ansible_user=admin
+pve ansible_ssh_host="{{ inventory_hostname}}.servers.{{ top_level_domain }}"
 
-[proxmox]
-pve ansible_host=10.0.10.10
+# [mikrotik]
+# router ansible_host=172.16.11.10 ansible_user=admin
+
+# [lxc]
+# test ansible_host=10.0.30.254 vmid=100
+# sonarr vmid=101
+# [lxc:vars]
+# ostemplate=local:vztmpl/debian-11-standard_11.0-1_amd64.tar.gz
+
+[servers]
+pve
+
+[servers:vars]
+ansible_host="{{ inventory_hostname}}.servers.{{ top_level_domain }}"
+
+[media]
+plex
+sonarr
+radarr
+animarr
+prowlarr
+
+[media:vars]
+ansible_host="{{ inventory_hostname}}.media.{{ top_level_domain }}"
+

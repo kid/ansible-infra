@@ -6,14 +6,14 @@
     repo: "{{ item.repo }}"
     update_cache: false
     state: absent
-  with_items: "{{ common_apt_repos_remove }}"
+  loop: "{{ common_apt_repos_remove }}"
 
 - name: Add packages repositories
   become: true
   apt_repository:
     repo: "{{ item }}"
     update_cache: false
-  with_items: "{{ common_apt_repos }}"
+  loop: "{{ common_apt_repos }}"
 
 - name: Remove unwanted packages
   become: true
@@ -36,27 +36,40 @@
   apt_key:
     id: "{{ item }}"
     state: absent
-  with_items: "{{ common_apt_keys_remove }}"
+  loop: "{{ common_apt_keys_remove }}"
 
 - name: Add wanted keys
   become: true
   apt_key:
-    url: "{{ item }}"
-  with_items: "{{ common_apt_keys }}"
+    id: "{{ item.id }}"
+    keyserver: "{{ item.keyserver }}"
+  loop: "{{ common_apt_keys }}"
+  when:
+    - item.id is defined
+
+- name: Add wanted keys
+  become: true
+  apt_key:
+    url: "{{ item.url }}"
+  loop: "{{ common_apt_keys }}"
+  when:
+    - item.url is defined
+
+- name: Update
+  become: true
+  apt:
+    cache_valid_time: 0
+    update_cache: true
 
 - name: Upgrade
   become: true
   apt:
-    cache_valid_time: 86400
-    update_cache: true
     upgrade: dist
 
 - name: Install wanted packages
   become: true
   apt:
     name: "{{ common_packages }}"
-    cache_valid_time: 86400
-    update_cache: true
 
 - name: Remove useless packages from the cache
   become: true

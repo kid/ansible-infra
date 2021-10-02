@@ -8,8 +8,8 @@ echo "$macaddress"
 vms=$(virsh list --name)
 networks=$(virsh net-list --name)
 
-[[ ! "$networks" =~ "kidibox-nat" ]] && virsh net-create --file ./kidibox-nat.xml
-[[ ! "$networks" =~ "kidibox-internal" ]] && virsh net-create --file ./kidibox-internal.xml
+[[ ! "$networks" =~ "kidibox-nat" ]] && virsh net-create --file ./lab/kidibox-nat.xml
+[[ ! "$networks" =~ "kidibox-internal" ]] && virsh net-create --file ./lab/kidibox-internal.xml
 
 name=router
 if [[ ! "$vms" =~ $name ]]

@@ -1,8 +1,5 @@
 ---
 
-ansible_user: root
-# ansible_python_interpreter: /usr/bin/python3
-
 common_apt_repos_remove:
   - repo: deb https://enterprise.proxmox.com/debian/pve bullseye pve-enterprise
     filename: pve-enterprise

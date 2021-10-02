@@ -1,27 +1,11 @@
 ---
 
-- hosts: containers
+- hosts: proxmox_nodes
   gather_facts: false
+  strategy: linear
+  tags:
+    - containers
   tasks:
-
-    - name: stop containers
-      delegate_to: localhost
-      community.general.proxmox:
-        vmid: "{{ vmid }}"
-        api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
-        api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
-        api_host: "pve.servers.lab.kidibox.net"
-        state: stopped
-        timeout: 600
-
     - name: delete containers
-      delegate_to: localhost
-      community.general.proxmox:
-        vmid: "{{ vmid }}"
-        api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
-        api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
-        api_host: "pve.servers.lab.kidibox.net"
-        state: absent
-        timeout: 600
-
-    - meta: flush_handlers
+      include_tasks: ./tasks/delete_containers.yml
+      loop: "{{ containers | default({}) | dict2items }}"

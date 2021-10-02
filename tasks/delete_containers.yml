@@ -1,0 +1,24 @@
+---
+
+- name: stop containers
+  delegate_to: localhost
+  throttle: 1
+  community.general.proxmox:
+    vmid: "{{ item.value.vmid }}"
+    node: pve
+    api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+    api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+    api_host: "{{ lookup('env', 'PROXMOX_HOST') }}"
+    proxmox_default_behavior: no_defaults
+    timeout: 600
+    state: stopped
+
+- name: delete containers
+  delegate_to: localhost
+  community.general.proxmox:
+    vmid: "{{ item.value.vmid }}"
+    api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+    api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+    api_host: "{{ lookup('env', 'PROXMOX_HOST') }}"
+    timeout: 600
+    state: absent

@@ -1,5 +1,5 @@
 pattern ?= all
-inventories ?= inventories/lab
+inventories ?= inventories
 extra_args ?=
 
 requirements:

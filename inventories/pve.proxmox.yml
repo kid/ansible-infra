@@ -1,4 +1,8 @@
 plugin: community.general.proxmox
-url: https://10.0.10.10:8006
+url: https://pve.servers.lab.kidibox.net:8006
 want_facts: true
 validate_certs: false
+keyed_groups:
+  - key: proxmox_tags_parsed
+    prefix: ""
+    separator: ""

@@ -1,3 +1,5 @@
 ---
 
 domain_name: "media.{{ top_level_domain }}"
+
+vlan_tag: 30
