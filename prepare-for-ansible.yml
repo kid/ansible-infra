@@ -4,5 +4,6 @@
   gather_facts: false
   vars:
     ansible_user: root
+    ansible_remote_tmp: /tmp/.root
   roles:
     - prep-for-ansible

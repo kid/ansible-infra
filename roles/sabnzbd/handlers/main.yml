@@ -1,0 +1,23 @@
+---
+
+- name: daemon-reload
+  become: true
+  systemd:
+    daemon_reload: true
+
+- name: enable sabnzbd
+  become: true
+  service:
+    name: sabnzbd
+    enabled: true
+
+- name: restart sabnzbd
+  become: true
+  service:
+    name: sabnzbd
+    state: restarted
+
+- name: wait for start
+  wait_for:
+    host: localhost
+    port: "{{ sabnzbd_port }}"

@@ -1,0 +1,8 @@
+---
+
+prowlarr_branch: develop
+prowlarr_version: '0.1.1.978'
+
+prowlarr_port: 9696
+
+prowlarr_sabnzbd_cateogry: prowlarr

@@ -1,29 +1,5 @@
 ---
 
-- name: Remove unwanted packages repositories
-  become: true
-  apt_repository:
-    repo: "{{ item.repo }}"
-    update_cache: false
-    state: absent
-  loop: "{{ common_apt_repos_remove }}"
-
-- name: Add packages repositories
-  become: true
-  apt_repository:
-    repo: "{{ item }}"
-    update_cache: false
-  loop: "{{ common_apt_repos }}"
-
-- name: Remove unwanted packages
-  become: true
-  apt:
-    name: "{{ common_packages_remove }}"
-    force: true
-    autoclean: true
-    autoremove: true
-    state: absent
-
 - name: Install gpg
   become: true
   apt:
@@ -41,34 +17,48 @@
 - name: Add wanted keys
   become: true
   apt_key:
-    id: "{{ item.id }}"
-    keyserver: "{{ item.keyserver }}"
+    id: "{{ item.id is defined | ternary(item.id, omit) }}"
+    url: "{{ item.url is defined | ternary(item.url, omit) }}"
+    keyserver: "{{ item.keyserver is defined | ternary(item.keyserver, omit) }}"
   loop: "{{ common_apt_keys }}"
-  when:
-    - item.id is defined
 
-- name: Add wanted keys
+- name: Remove unwanted packages repositories
   become: true
-  apt_key:
-    url: "{{ item.url }}"
-  loop: "{{ common_apt_keys }}"
-  when:
-    - item.url is defined
+  apt_repository:
+    repo: "{{ item.repo }}"
+    state: absent
+  loop: "{{ common_apt_repos_remove }}"
 
+- name: Add packages repositories
+  become: true
+  apt_repository:
+    repo: "{{ item }}"
+  loop: "{{ common_apt_repos }}"
+
+- name: Remove unwanted packages
+  become: true
+  apt:
+    name: "{{ common_packages_remove }}"
+    force: true
+    autoclean: true
+    autoremove: true
+    state: absent
 - name: Update
   become: true
   apt:
-    cache_valid_time: 0
+    cache_valid_time: 86400
     update_cache: true
 
 - name: Upgrade
   become: true
   apt:
+    cache_valid_time: 86400
     upgrade: dist
 
 - name: Install wanted packages
   become: true
   apt:
+    cache_valid_time: 86400
     name: "{{ common_packages }}"
 
 - name: Remove useless packages from the cache

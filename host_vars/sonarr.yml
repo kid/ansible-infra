@@ -9,5 +9,5 @@ common_apt_keys:
 
 common_packages:
   - htop
-  - vim
+  - neovim
   - sonarr

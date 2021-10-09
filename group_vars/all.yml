@@ -1,9 +1,0 @@
----
-
-ansible_user: ansible
-
-common_packages:
-  - htop
-  - vim
-
-top_level_domain: lab.kidibox.net

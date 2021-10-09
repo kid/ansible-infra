@@ -1,19 +1,12 @@
 ---
 - name: Prepare host for ansible
-  vars:
-    # ansible_user: root
-    ansible_remote_tmp: /tmp/.root
   block:
-    - name: Update APT cache
-      apt:
-        cache_valid_time: 86400
-        update_cache: true
-      ignore_errors: true
-
     - name: Install sudo
       apt:
         name: sudo
         state: present
+        cache_valid_time: 86400
+        update_cache: true
 
     - name: Add ansible user
       user:

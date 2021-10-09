@@ -6,15 +6,41 @@ containers:
   plex:
     vmid: 100
     vlan_tag: 1030
+    bind_mounts:
+      - src: /tank/apps/plex
+        dest: /var/lib/plexmediaserver/Library/Application Support
+      - src: /tank/library
+        dest: /tank/library
   prowlarr:
     vmid:  110
     vlan_tag: 1030
+    bind_mounts:
+      - src: /tank/apps/prowlarr
+        dest: /var/lib/prowlarr
   radarr:
     vmid: 120
     vlan_tag: 1030
   sonarr:
     vmid: 130
     vlan_tag: 1030
+    bind_mounts:
+      - src: /tank/library/series
+        dest: /tank/library/series
+      - src: /tank/downloads/sabnzbd/complete
+        dest: /tank/downloads/sabnzbd/complete
   animarr:
     vmid: 140
     vlan_tag: 1030
+    bind_mounts:
+      - src: /tank/library/animes
+        dest: /tank/library/animes
+      - src: /tank/downloads/sabnzbd/complete
+        dest: /tank/downloads/sabnzbd/complete
+  sabnzbd:
+    vmid: 150
+    vlan_tag: 1030
+    bind_mounts:
+      - src: /tank/apps/sabnzbd
+        dest: /var/lib/sabnzbd
+      - src: /tank/downloads/sabnzbd
+        dest: /var/lib/sabnzbd/Downloads

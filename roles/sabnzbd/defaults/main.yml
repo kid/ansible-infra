@@ -1,0 +1,12 @@
+---
+
+sabnzbd_version: 3.4.1
+
+sabnzbd_port: 8080
+
+sabnzbd_categories: []
+sabnzbd_servers: []
+
+sabnzbd_settings:
+  misc:
+    web_color: Night

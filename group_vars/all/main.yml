@@ -1,0 +1,56 @@
+---
+
+ansible_user: ansible
+
+common_packages:
+  - htop
+  - neovim
+
+common_system_groups: "{{ app_users |  json_query('[].{name: name, gid: gid || uid}') }}"
+common_system_users: "{{ app_users | json_query('[].{name: name, uid: uid, groups: groups}') }}"
+
+top_level_domain: lab.kidibox.net
+
+app_users:
+  - uid: 330
+    name: sabnzbd
+    groups: []
+  - uid: 350
+    name: animarr
+    groups:
+      - sabnzbd
+  - uid: 351
+    name: sonarr
+    groups:
+      - sabnzbd
+  - uid: 352
+    name: radarr
+    groups:
+      - sabnzbd
+  - uid: 360
+    name: prowlarr
+    groups: []
+  - uid: 490
+    name: plex
+    groups:
+      - animarr
+      - sonarr
+      - radarr
+
+animarr_user_id: "{{ app_users | selectattr('name', 'equalto', 'animarr') | map(attribute='uid') | first }}"
+animarr_group_id: "{{ app_users | selectattr('name', 'equalto', 'animarr') | map(attribute='gid') | first }}"
+
+sonarr_user_id: "{{ app_users | selectattr('name', 'equalto', 'sonarr') | map(attribute='uid') | first }}"
+sonarr_group_id: "{{ app_users | selectattr('name', 'equalto', 'sonarr') | map(attribute='gid') | first }}"
+
+radarr_user_id: "{{ app_users | selectattr('name', 'equalto', 'radarr') | map(attribute='uid') | first }}"
+radarr_group_id: "{{ app_users | selectattr('name', 'equalto', 'radarr') | map(attribute='gid') | first }}"
+
+prowlarr_user_id: "{{ app_users | selectattr('name', 'equalto', 'prowlarr') | map(attribute='uid') | first }}"
+prowlarr_group_id: "{{ app_users | selectattr('name', 'equalto', 'prowlarr') | map(attribute='gid') | first }}"
+
+sabnzbd_user_id: "{{ app_users | selectattr('name', 'equalto', 'sabnzbd') | map(attribute='uid') | first }}"
+sabnzbd_group_id: "{{ app_users | selectattr('name', 'equalto', 'sabnzbd') | map(attribute='gid') | first }}"
+
+plex_user_id: "{{ app_users | selectattr('name', 'equalto', 'plex') | map(attribute='uid') | first }}"
+plex_group_id: "{{ app_users | selectattr('name', 'equalto', 'plex') | map(attribute='gid') | first }}"

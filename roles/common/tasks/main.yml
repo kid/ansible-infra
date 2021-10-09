@@ -1,16 +1,44 @@
 ---
 
-- import_tasks: apt.yml
-  when: ansible_facts.distribution in ['Debian', 'Ubuntu']
-  tags: apt
+- name: set hostname
+  become: true
+  hostname:
+    name: "{{ inventory_hostname }}.{{ domain_name }}"
 
-- user:
+- name: create system groups
+  become: true
+  group:
+    gid: "{{ item.gid is defined | ternary(item.gid + (common_gid_offset | default(0)), omit) }}"
+    name: "{{ item.name }}"
+    system: true
+    state: present
+  loop: "{{ common_system_groups | default([]) }}"
+
+- name: create system users
+  become: true
+  user:
+    uid: "{{ item.uid is defined | ternary(item.uid + (common_uid_offset | default(0)), omit) }}"
+    name: "{{ item.name }}"
+    group: "{{ item.group | default(item.name) }}"
+    groups: "{{ item.groups is defined | ternary(item.groups | join(','), '')  }}"
+    shell: "{{ item.shell | default('/usr/sbin/nologin') }}"
+    system: true
+    create_home: false
+    state: present
+  loop: "{{ common_system_users | default([]) }}"
+
+# - name: add system usrs to groups
+#   become: true
+#   group:
+
+- name: create regular users
+  user:
     name: "{{ item.name }}"
     uid: "{{ item.uid | default(omit) }}"
     shell: "{{ item.shell | default('/bin/bash') }}"
     system: "{{ item.system | default(omit) }}"
     password_lock: "{{ item.password_lock | default(omit) }}"
-  with_items: "{{ common_users | default([]) }}"
+  loop: "{{ common_users | default([]) }}"
   become: true
 
 - lineinfile:
@@ -20,7 +48,7 @@
     mode: 0440
     create: true
     validate: 'visudo -cf %s'
-  with_items: "{{ common_users | default([]) }}"
+  loop: "{{ common_users | default([]) }}"
   when: item.sudo is defined
   become: true
 
@@ -28,7 +56,7 @@
     user: "{{ item.name }}"
     state: present
     key: "{{ item.authorized_key }}"
-  with_items: "{{ common_users | default([]) }}"
+  loop: "{{ common_users | default([]) }}"
   when: item.authorized_key is defined
   become: true
 
@@ -39,3 +67,7 @@
     state: present
   become: true
   when: ansible_facts.distribution in ['Ubuntu']
+
+- import_tasks: apt.yml
+  when: ansible_facts.distribution in ['Debian', 'Ubuntu']
+  tags: apt

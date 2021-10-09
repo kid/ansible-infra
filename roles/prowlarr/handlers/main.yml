@@ -1,0 +1,23 @@
+---
+
+- name: daemon-reload
+  become: true
+  systemd:
+    daemon_reload: yes
+
+- name: enable prowlarr
+  become: true
+  service:
+    name: prowlarr
+    enabled: true
+
+- name: restart prowlarr
+  become: true
+  service:
+    name: prowlarr
+    state: restarted
+
+- name: wait for start
+  wait_for:
+    host: localhost
+    port: "{{ prowlarr_port }}"

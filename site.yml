@@ -2,3 +2,13 @@
 
 - import_playbook: mikrotik.yml
 - import_playbook: proxmox.yml
+
+- hosts: sabnzbd
+  gather_facts: true
+  roles:
+    - sabnzbd
+
+- hosts: prowlarr
+  gather_facts: true
+  roles:
+    - prowlarr

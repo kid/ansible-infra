@@ -1,10 +1,10 @@
 ---
 
-# - hosts: proxmox_nodes
-#   roles:
-#     - common
-#   tags:
-#     - common
+- hosts: proxmox_nodes
+  roles:
+    - common
+  tags:
+    - common
 
 # TODO move this to common role
 - hosts: proxmox_nodes
@@ -19,11 +19,46 @@
       community.general.zfs:
         name: "{{ item }}"
         state: present
+        extra_zfs_properties:
+          acltype: posixacl
+          xattr: sa
       with_items:
         - tank/library
         - tank/library/movies
         - tank/library/series
+        - tank/library/animes
+        - tank/apps
+        - tank/apps/plex
+        - tank/apps/prowlarr
+        - tank/apps/radarr
+        - tank/apps/sonarr
+        - tank/apps/animarr
         - tank/downloads
+        - tank/downloads/sabnzbd
+
+    - name: set application permissions
+      become: true
+      file:
+        state: directory
+        path: "{{ item.path is defined | ternary(item.path, '/tank/apps/' + item.app) }}"
+        owner: "{{ item.user | default(item.app) }}"
+        group: "{{ item.group | default(item.app) }}"
+        recurse: true
+      loop:
+        - app: prowlarr
+        - app: animarr
+        - app: animarr
+          path: /tank/library/animes
+        - app: sonarr
+        - app: sonarr
+          path: /tank/library/series
+        - app: radarr
+        - app: radarr
+          path: /tank/library/movies
+        - app: sabnzbd
+        - app: sabnzbd
+          path: /tank/downloads/sabnzbd
+        - app: plex
 
 - hosts: proxmox_nodes
   gather_facts: false
@@ -31,18 +66,18 @@
   handlers:
     - name: sleep
       pause:
-        seconds: 30
+        seconds: 10
   tags:
     - containers
   tasks:
-    - name: create containers
-      include_tasks: ./tasks/create_containers.yml
+    - include_tasks: ./tasks/create_containers.yml
       loop: "{{ containers | default({}) | dict2items }}"
     - meta: flush_handlers
 
 - hosts: need_ansible_prep
   vars:
     ansible_user: root
+    ansible_remote_tmp: /tmp/.root
   roles:
     - prep-for-ansible
 
@@ -52,6 +87,8 @@
 
 - hosts: all,!proxmox_nodes,!mikrotik
   roles:
+    - common
+  tags:
     - common
 
 # - hosts: all,!proxmox_nodes,!mikrotik

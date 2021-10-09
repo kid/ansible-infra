@@ -1,4 +1,4 @@
-pve ansible_ssh_host="{{ inventory_hostname}}.servers.{{ top_level_domain }}"
+pve ansible_ssh_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
 
 # [mikrotik]
 # router ansible_host=172.16.11.10 ansible_user=admin
@@ -13,7 +13,7 @@ pve ansible_ssh_host="{{ inventory_hostname}}.servers.{{ top_level_domain }}"
 pve
 
 [servers:vars]
-ansible_host="{{ inventory_hostname}}.servers.{{ top_level_domain }}"
+ansible_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
 
 [media]
 plex
@@ -21,7 +21,7 @@ sonarr
 radarr
 animarr
 prowlarr
+sabnzbd
 
 [media:vars]
-ansible_host="{{ inventory_hostname}}.media.{{ top_level_domain }}"
-
+ansible_host="{{ inventory_hostname }}.media.{{ top_level_domain }}"

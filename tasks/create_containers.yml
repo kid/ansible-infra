@@ -17,12 +17,50 @@
     hostname: "{{ item.key }}"
     unprivileged: true
     storage: local-zfs
+    # cpus: 4
+    memory: 4096
     netif:
       net0: 'name=eth0,bridge=vmbr0,ip=dhcp,ip6=dhcp,tag={{ item.value.vlan_tag }}'
     features:
       - nesting=1
     ostemplate: "{{ item.value.ostemplate | default(ostemplate) }}"
     pubkey: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
+# FIXME does not work https://forum.proxmox.com/threads/unmanaged-ct-cant-working-in-ve7.92381/
+# - name: set ostype to unmanaged
+#   become: true
+#   lineinfile:
+#     path: "/etc/pve/lxc/{{ item.value.vmid }}.conf"
+#     regex: '^ostype'
+#     line: 'ostype: unmanaged'
+
+- name: create uid map
+  become: true
+  lineinfile:
+    path: "/etc/pve/lxc/{{ item.value.vmid }}.conf"
+    regex: '^lxc.idmap: u'
+    line: 'lxc.idmap: u 0 100000 65535'
+
+- name: create gid map
+  become: true
+  lineinfile:
+    path: "/etc/pve/lxc/{{ item.value.vmid }}.conf"
+    regex: '^lxc.idmap: g'
+    line: 'lxc.idmap: g 0 100000 65535'
+
+
+- name: create bind mounts
+  become: true
+  lineinfile:
+    path: "/etc/pve/lxc/{{ item.value.vmid }}.conf"
+    regexp: '^mp{{ id }}:'
+    line: "mp{{ id }}: {{ mount.src }},mp={{ mount.dest }}"
+  when:
+  - item.value.bind_mounts is defined
+  loop: "{{ item.value.bind_mounts }}"
+  loop_control:
+    loop_var: mount
+    index_var: id
 
 - name: start containers
   delegate_to: localhost

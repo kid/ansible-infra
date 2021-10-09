@@ -1,5 +1,8 @@
 ---
 
+common_uid_offset: 100000
+common_gid_offset: 100000
+
 common_apt_repos_remove:
   - repo: deb https://enterprise.proxmox.com/debian/pve bullseye pve-enterprise
     filename: pve-enterprise

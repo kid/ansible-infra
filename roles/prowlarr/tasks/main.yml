@@ -1,0 +1,161 @@
+---
+
+- name: install prerequisite
+  become: true
+  apt:
+    cache_valid_time: 86400
+    pkg:
+      - curl
+      - sqlite3
+
+- name: create directories
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prowlarr
+    group: prowlarr
+  loop:
+    - /var/lib/prowlarr
+
+- name: get prowlarr version
+  uri:
+    url: "http://localhost:{{ prowlarr_port }}/initialize.js"
+    return_content: true
+  ignore_errors: true
+  register: _prowlarr_version
+
+- set_fact:
+    current_prowlarr_version: "{{ _prowlarr_version.content | regex_search(\"version: '(?P<version>.+)'\", '\\g<version>') | first }}"
+  when: _prowlarr_version is success
+
+- name: install or update prowlarr
+  block:
+  - name: download prowlarr
+    get_url:
+      url: "http://prowlarr.servarr.com/v1/update/{{ prowlarr_branch }}/updatefile?os=linux&runtime=netcore&arch=x64"
+      dest: /tmp/prowlarr.tar.gz
+
+  - name: extract prowlarr
+    unarchive:
+      remote_src: yes
+      src: "https://github.com/Prowlarr/Prowlarr/releases/download/v{{ prowlarr_version }}/Prowlarr.{{ prowlarr_branch }}.{{ prowlarr_version }}.linux-core-x64.tar.gz"
+      dest: /opt/
+      owner: prowlarr
+      group: prowlarr
+  when: current_prowlarr_version is not defined or current_prowlarr_version is version(prowlarr_version, '<')
+  become: true
+  tags:
+    - install
+  notify:
+    - restart prowlarr
+    - wait for start
+
+- name: template systemd service
+  become: true
+  notify:
+    - daemon-reload
+    - enable prowlarr
+    - restart prowlarr
+  template:
+    src: prowlarr.service.j2
+    dest: /etc/systemd/system/prowlarr.service
+
+- meta: flush_handlers
+
+
+- name: get prowlarr init data
+  uri:
+    url: "http://localhost:{{ prowlarr_port }}/initialize.js"
+    return_content: true
+  ignore_errors: true
+  register: _prowlarr_init_data
+
+
+- set_fact:
+    prowlarr_api_root: "{{ _prowlarr_init_data.content | regex_search(\"apiRoot: '(?P<apiRoot>.+)'\", '\\g<apiRoot>') | first }}"
+    prowlarr_api_key: "{{ _prowlarr_init_data.content | regex_search(\"apiKey: '(?P<apiKey>.+)'\", '\\g<apiKey>') | first }}"
+
+- set_fact:
+    prowlarr_api_url: "http://{{ ansible_fqdn }}:{{ prowlarr_port }}{{ prowlarr_api_root }}"
+
+- name: get download clients
+  uri:
+    url: "{{ prowlarr_api_url }}/downloadclient"
+    method: get
+    return_content: true
+    headers:
+      X-Api-Key: "{{ prowlarr_api_key }}"
+  register: _download_clients
+
+- set_fact:
+    _sabnzbd_fields:
+      - name: host
+        value: "{{ hostvars['sabnzbd']['sabnzbd_host'] }}"
+      - name: port
+        value: "{{ hostvars['sabnzbd']['sabnzbd_port'] }}"
+      - name: apiKey
+        value: "{{ hostvars['sabnzbd']['sabnzbd_api_key'] }}"
+      - name: useSsl
+        value: "{{ hostvars['sabnzbd']['sabnzbd_use_ssl'] }}"
+      - name: category
+        value: "{{ prowlarr_sabnzbd_cateogry }}"
+      - name: priority
+        value: -100
+      - name: urlBase
+      - name: username
+      - name: password
+
+- name: add sabnzbd download client
+  uri:
+    url: "{{ prowlarr_api_url }}/downloadclient"
+    method: POST
+    body_format: json
+    body:
+      enable: true
+      configContract: SabnzbdSettings
+      implementation: Sabnzbd
+      implementationName: SABnzbd
+      inkLink: https://wiki.servarr.com/prowlarr/supported#sabnzbd
+      name: sabnzbd
+      protocol: usenet
+      priority: 1
+      tags: []
+      fields: "{{ _sabnzbd_fields }}"
+    headers:
+      X-Api-Key: "{{ prowlarr_api_key }}"
+    status_code: 201
+  when: "'sabnzbd' not in _download_clients.json | default([], true) | map(attribute='name')"
+
+- set_fact:
+    _sabnzbd_data: "{{ _download_clients.json | selectattr('name', 'equalto', 'sabnzbd') | first }}"
+  when: "'sabnzbd' in _download_clients.json | default([], true) | map(attribute='name')"
+
+- name: update sabnzbd download client
+  uri:
+    url: "{{ prowlarr_api_url }}/downloadclient/{{ _download_clients.json | selectattr('name', 'equalto', 'sabnzbd') | map(attribute='id') | first }}"
+    method: PUT
+    body_format: json
+    body:
+      id: "{{ sabnzbd.id }}"
+      enable: true
+      configContract: SabnzbdSettings
+      implementation: Sabnzbd
+      implementationName: SABnzbd
+      inkLink: https://wiki.servarr.com/prowlarr/supported#sabnzbd
+      name: sabnzbd
+      protocol: usenet
+      priority: 1
+      tags: []
+      fields: "{{ _sabnzbd_fields }}"
+    headers:
+      X-Api-Key: "{{ prowlarr_api_key }}"
+    status_code: 201
+  when:
+    - _sabnzbd is defined
+    - (_sabnzbd.data | selectattr('name', 'equalto', 'host') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_host'] or
+      (_sabnzbd.data | selectattr('name', 'equalto', 'port') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_port'] or
+      (_sabnzbd.data | selectattr('name', 'equalto', 'apiKey') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_api_key'] or
+      (_sabnzbd.data | selectattr('name', 'equalto', 'useSsl') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_use_ssl'] or
+      (_sabnzbd.data | selectattr('name', 'equalto', 'category') | map(attribute='value') | first) != prowlarr_sabnzbd_cateogry
+

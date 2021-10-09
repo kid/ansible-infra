@@ -1,0 +1,140 @@
+---
+
+- name: install prerequisite
+  become: true
+  apt:
+    cache_valid_time: 86400
+    pkg:
+      - curl
+      - sqlite3
+      - unrar
+      - par2
+      - unzip
+      - p7zip
+      - python3-dev
+      - python3-setuptools
+      - python3-pip
+      - libffi-dev
+      - libssl-dev
+
+- name: create directories
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: sabnzbd
+    group: sabnzbd
+  loop:
+    - /var/lib/sabnzbd
+
+- name: get sabnzbd version
+  command: /opt/sabnzbd/SABnzbd.py --version
+  register: _sabnzbd_version
+  ignore_errors: true
+  changed_when: false
+
+- debug:
+    var: _sabnzbd_version
+
+- name: install or update sabnzbd
+  block:
+  - name: download sabnzbd
+    get_url:
+      url: "https://github.com/sabnzbd/sabnzbd/releases/download/{{ sabnzbd_version }}/SABnzbd-{{ sabnzbd_version }}-src.tar.gz"
+      dest: /tmp/sabnzbd.tar.gz
+
+  - name: extract sabnzbd
+    unarchive:
+      remote_src: yes
+      src: /tmp/sabnzbd.tar.gz
+      dest: /tmp
+
+  - name: copy sabnzbd
+    copy:
+      src: "/tmp/SABnzbd-{{ sabnzbd_version }}/"
+      remote_src: yes
+      dest: /opt/sabnzbd
+      owner: sabnzbd
+      group: sabnzbd
+
+  - name: install pip dependencies
+    pip:
+      requirements: /opt/sabnzbd/requirements.txt
+  when: _sabnzbd_version is failed or (_sabnzbd_version.stdout | regex_search('\\d+\\.\\d+\\.\\d+') is version(sabnzbd_version, '<'))
+  become: true
+  notify:
+    - restart sabnzbd
+    - wait for start
+  tags:
+    - install
+
+- name: template systemd service
+  become: true
+  notify:
+    - daemon-reload
+    - enable sabnzbd
+    - restart sabnzbd
+    - wait for start
+  template:
+    src: sabnzbd.service.j2
+    dest: /etc/systemd/system/sabnzbd.service
+
+- meta: flush_handlers
+
+- command: awk -F "=" '/^api_key/ {gsub(/[[:space:]]*/, ""); print $2}' /var/lib/sabnzbd/sabnzbd.ini
+  become: true
+  register: _sabnzbd_api_key
+  changed_when: false
+
+- name: set host whitelist
+  uri:
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=misc&keyword=host_whitelist&value={{ value | urlencode }}"
+  vars:
+    value: "{{ ansible_fqdn }},"
+
+- name: get categories
+  register: _categories
+  uri:
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&output=json&mode=get_config&section=categories"
+    return_content: true
+
+- name: add missing categories
+  uri:
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&output=json&mode=set_config&section=categories&keyword={{ item | urlencode }}"
+    return_content: true
+  loop: "{{ sabnzbd_categories | difference(_categories.json.config.categories | map(attribute='name')) }}"
+
+- name: remove unwanted categories
+  uri:
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&output=json&mode=del_config&section=categories&keyword={{ item | urlencode }}"
+    return_content: true
+  loop: "{{ _categories.json.config.categories | map(attribute='name') | difference(sabnzbd_categories + ['*']) }}"
+
+- name: get servers
+  register: _servers
+  uri:
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&output=json&mode=get_config&section=servers"
+    return_content: true
+
+- name: add or update servers
+  uri:
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=servers&keyword={{ item.host | urlencode }}&host={{ item.host | urlencode }}&username={{ item.username | urlencode }}&password={{ item.password | urlencode }}&priority={{ item.priority | default(0) }}"
+  loop: "{{ sabnzbd_servers }}"
+  when:
+    - not (_servers.json.config.servers | selectattr('name', 'equalto', item.host))
+      or (_servers.json.config.servers | selectattr('name', 'equalto', item.host) | first).host != item.host
+      or (_servers.json.config.servers | selectattr('name', 'equalto', item.host) | first).username != item.username
+      or (_servers.json.config.servers | selectattr('name', 'equalto', item.host) | first).priority != (item.priority | default(0))
+
+- name: remove unwanted servers
+  uri:
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=del_config&section=servers&keyword={{ item | urlencode }}"
+    return_content: true
+  loop: "{{ _servers.json.config.servers | map(attribute='host') | difference(sabnzbd_servers | map(attribute='host')) }}"
+
+- name: expose variables for other roles
+  set_fact:
+    sabnzbd_host: "{{ ansible_fqdn }}"
+    sabnzbd_port: "{{ sabnzbd_port }}"
+    sabnzbd_api_key: "{{ _sabnzbd_api_key.stdout }}"
+    sabnzbd_use_ssl: false
