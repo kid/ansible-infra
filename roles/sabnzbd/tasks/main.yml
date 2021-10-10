@@ -33,9 +33,6 @@
   ignore_errors: true
   changed_when: false
 
-- debug:
-    var: _sabnzbd_version
-
 - name: install or update sabnzbd
   block:
   - name: download sabnzbd
@@ -85,6 +82,8 @@
   become: true
   register: _sabnzbd_api_key
   changed_when: false
+  tags:
+    - facts
 
 - name: set host whitelist
   uri:
@@ -100,13 +99,13 @@
 
 - name: add missing categories
   uri:
-    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&output=json&mode=set_config&section=categories&keyword={{ item | urlencode }}"
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=categories&keyword={{ item | urlencode }}"
     return_content: true
   loop: "{{ sabnzbd_categories | difference(_categories.json.config.categories | map(attribute='name')) }}"
 
 - name: remove unwanted categories
   uri:
-    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&output=json&mode=del_config&section=categories&keyword={{ item | urlencode }}"
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=del_config&section=categories&keyword={{ item | urlencode }}"
     return_content: true
   loop: "{{ _categories.json.config.categories | map(attribute='name') | difference(sabnzbd_categories + ['*']) }}"
 
@@ -118,19 +117,19 @@
 
 - name: add or update servers
   uri:
-    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=servers&keyword={{ item.host | urlencode }}&host={{ item.host | urlencode }}&username={{ item.username | urlencode }}&password={{ item.password | urlencode }}&priority={{ item.priority | default(0) }}"
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=servers&keyword={{ item.host | urlencode }}&host={{ item.host | urlencode }}&username={{ item.username | urlencode }}&password={{ item.password | urlencode }}&priority={{ item.priority | default(0) }}&connection={{ item.connections | default(50) }}&ssl=1&ssl_verify=2"
   loop: "{{ sabnzbd_servers }}"
   when:
-    - not (_servers.json.config.servers | selectattr('name', 'equalto', item.host))
-      or (_servers.json.config.servers | selectattr('name', 'equalto', item.host) | first).host != item.host
-      or (_servers.json.config.servers | selectattr('name', 'equalto', item.host) | first).username != item.username
-      or (_servers.json.config.servers | selectattr('name', 'equalto', item.host) | first).priority != (item.priority | default(0))
+    - not (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host))
+      or (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host) | first).host != item.host
+      or (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host) | first).username != item.username
+      or (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host) | first).priority != (item.priority | default(0))
 
 - name: remove unwanted servers
   uri:
     url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=del_config&section=servers&keyword={{ item | urlencode }}"
     return_content: true
-  loop: "{{ _servers.json.config.servers | map(attribute='host') | difference(sabnzbd_servers | map(attribute='host')) }}"
+  loop: "{{ _servers.json.config.servers | default([]) | map(attribute='host') | difference(sabnzbd_servers | map(attribute='host')) }}"
 
 - name: expose variables for other roles
   set_fact:
@@ -138,3 +137,5 @@
     sabnzbd_port: "{{ sabnzbd_port }}"
     sabnzbd_api_key: "{{ _sabnzbd_api_key.stdout }}"
     sabnzbd_use_ssl: false
+  tags:
+    - facts

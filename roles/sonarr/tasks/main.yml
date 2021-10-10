@@ -1,0 +1,109 @@
+---
+
+- name: install gpg
+  apt:
+    pkg: gpg
+  become: true
+
+- name: add mono apt keys
+  apt_key:
+    id: 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+    keyserver: hkp://keyserver.ubuntu.com:80
+  become: true
+
+- name: add mono apt repository
+  apt_repository:
+    repo: deb https://download.mono-project.com/repo/ubuntu stable-focal main
+  become: true
+  notify:
+    - update apt cache
+
+- meta: flush_handlers
+
+- apt:
+    pkg:
+      - ca-certificates-mono
+      - libmediainfo0v5
+      - libmono-system-net-http4.0-cil
+      - libsqlite3-0
+      - mono-complete
+    cache_valid_time: 86400
+  become: true
+
+- name: get release infos
+  uri:
+    url: https://services.sonarr.tv/v1/releases
+    return_content: true
+  register: _release
+
+- set_fact:
+    _release_info: "{{ _release.json | dict2items | map(attribute='value') | selectattr('branch', 'equalto', sonarr_branch) | first }}"
+
+- name: create directories
+  become: true
+  file:
+    path: "{{ item }}"
+    owner: "{{ sonarr_user }}"
+    group: "{{ sonarr_group }}"
+    state: directory
+  loop:
+    - /var/lib/sonarr
+
+- name: get sonarr version
+  uri:
+    url: "http://localhost:{{ sonarr_port }}/initialize.js"
+    return_content: true
+  ignore_errors: true
+  register: _sonarr_version
+
+- set_fact:
+    current_sonarr_version: "{{ _sonarr_version.content | regex_search(\"version: '(?P<version>.+)'\", '\\g<version>') | first }}"
+  when: _sonarr_version is success
+
+- name: install or update sonarr
+  unarchive:
+    remote_src: yes
+    dest: /opt/
+    src: "{{ _release_info.linux.manual.url }}"
+    owner: "{{ sonarr_user }}"
+    group: "{{ sonarr_group }}"
+  when: current_sonarr_version is not defined or current_sonarr_version is version(_release_info.version, '<')
+  become: true
+  tags:
+    - install
+  notify:
+    - restart sonarr
+    - wait for start
+
+- name: template systemd service
+  become: true
+  notify:
+    - daemon-reload
+    - enable sonarr
+    - restart sonarr
+  template:
+    src: sonarr.service.j2
+    dest: /etc/systemd/system/sonarr.service
+
+- meta: flush_handlers
+
+- name: get sonarr init data
+  uri:
+    url: "http://localhost:{{ sonarr_port }}/initialize.js"
+    return_content: true
+  ignore_errors: true
+  register: _sonarr_init_data
+  tags:
+    - facts
+
+- set_fact:
+    app_url: "http://{{ ansible_fqdn }}:{{ sonarr_port }}"
+    api_root: "{{ _sonarr_init_data.content | regex_search(\"apiRoot: '(?P<apiRoot>.+)'\", '\\g<apiRoot>') | first }}"
+    api_key: "{{ _sonarr_init_data.content | regex_search(\"apiKey: '(?P<apiKey>.+)'\", '\\g<apiKey>') | first }}"
+  tags:
+    - facts
+
+- set_fact:
+    api_url: "{{ app_url }}{{ api_root }}"
+  tags:
+    - facts

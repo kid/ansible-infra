@@ -8,7 +8,24 @@
   roles:
     - sabnzbd
 
+- hosts: radarr
+  gather_facts: true
+  roles:
+    - radarr
+
+- hosts: animarr,sonarr
+  gather_facts: true
+  roles:
+    - sonarr
+
 - hosts: prowlarr
   gather_facts: true
   roles:
     - prowlarr
+
+- hosts: prowlarr,animarr,sonarr,radarr
+  gather_facts: true
+  roles:
+    - servarr-config
+  tags:
+    - servarr

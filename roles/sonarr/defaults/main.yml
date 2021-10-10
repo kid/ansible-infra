@@ -1,0 +1,8 @@
+---
+
+sonarr_branch: main
+
+sonarr_user: sonarr
+sonarr_group: sonarr
+
+sonarr_port: 8989

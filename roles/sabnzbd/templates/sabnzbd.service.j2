@@ -9,6 +9,7 @@ Environment="PYTHONIOENCODING=utf-8"
 ExecStart=/opt/sabnzbd/SABnzbd.py --disable-file-log --logging 1 --browser 0 --server 0.0.0.0:8080 --config-file /var/lib/sabnzbd/sabnzbd.ini
 User=sabnzbd
 Group=sabnzbd
+UMask=002
 Type=simple
 Restart=on-failure
 

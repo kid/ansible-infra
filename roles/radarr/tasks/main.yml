@@ -1,0 +1,87 @@
+---
+
+- apt:
+    pkg:
+      - curl
+      - mediainfo
+      - sqlite3
+    cache_valid_time: 86400
+  become: true
+
+- name: get release infos
+  uri:
+    url: https://radarr.servarr.com/v1/update/{{ radarr_branch }}/changes?runtime=netcore&os=linux
+    return_content: true
+  register: _release
+
+- set_fact:
+    _release_info: "{{ _release.json | first }}"
+
+- name: create directories
+  become: true
+  file:
+    path: "{{ item }}"
+    owner: "{{ radarr_user }}"
+    group: "{{ radarr_group }}"
+    state: directory
+  loop:
+    - /var/lib/radarr
+
+- name: get radarr version
+  uri:
+    url: "http://localhost:{{ radarr_port }}/initialize.js"
+    return_content: true
+  ignore_errors: true
+  register: _radarr_version
+
+- set_fact:
+    current_radarr_version: "{{ _radarr_version.content | regex_search(\"version: '(?P<version>.+)'\", '\\g<version>') | first }}"
+  when: _radarr_version is success
+
+- name: install or update radarr
+  unarchive:
+    remote_src: yes
+    dest: /opt/
+    src: "{{ _release_info.url }}"
+    owner: "{{ radarr_user }}"
+    group: "{{ radarr_group }}"
+  when: current_radarr_version is not defined or current_radarr_version is version(_release_info.version, '<')
+  become: true
+  tags:
+    - install
+  notify:
+    - restart radarr
+    - wait for start
+
+- name: template systemd service
+  become: true
+  notify:
+    - daemon-reload
+    - enable radarr
+    - restart radarr
+  template:
+    src: radarr.service.j2
+    dest: /etc/systemd/system/radarr.service
+
+- meta: flush_handlers
+
+- name: get radarr init data
+  uri:
+    url: "http://localhost:{{ radarr_port }}/initialize.js"
+    return_content: true
+  ignore_errors: true
+  register: _radarr_init_data
+  tags:
+    - facts
+
+- set_fact:
+    app_url: "http://{{ ansible_fqdn }}:{{ radarr_port }}"
+    api_root: "{{ _radarr_init_data.content | regex_search(\"apiRoot: '(?P<apiRoot>.+)'\", '\\g<apiRoot>') | first }}"
+    api_key: "{{ _radarr_init_data.content | regex_search(\"apiKey: '(?P<apiKey>.+)'\", '\\g<apiKey>') | first }}"
+  tags:
+    - facts
+
+- set_fact:
+    api_url: "{{ app_url }}{{ api_root }}"
+  tags:
+    - facts

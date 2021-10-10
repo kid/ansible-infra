@@ -31,4 +31,4 @@ site: playbook=site.yml
 site: playbook
 
 playbook:
-	ansible-playbook -i "$(inventories)" --limit="$(pattern)" "$(playbook)" --diff $(extra_args)
+	ansible-playbook -i "$(inventories)" --limit "$(pattern)" "$(playbook)" --diff $(extra_args)

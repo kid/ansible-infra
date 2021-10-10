@@ -1,0 +1,28 @@
+---
+
+- name: update apt cache
+  become: true
+  apt:
+    update_cache: true
+
+- name: daemon-reload
+  become: true
+  systemd:
+    daemon_reload: yes
+
+- name: enable radarr
+  become: true
+  service:
+    name: radarr
+    enabled: true
+
+- name: restart radarr
+  become: true
+  service:
+    name: radarr
+    state: restarted
+
+- name: wait for start
+  wait_for:
+    host: localhost
+    port: "{{ radarr_port }}"

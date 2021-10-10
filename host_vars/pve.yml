@@ -20,22 +20,33 @@ containers:
   radarr:
     vmid: 120
     vlan_tag: 1030
+    bind_mounts:
+      - src: /tank/apps/radarr
+        dest: /var/lib/radarr
+      - src: /tank/library/movies
+        dest: /tank/library/movies
+      - src: /tank/downloads/sabnzbd
+        dest: /var/lib/sabnzbd/Downloads
   sonarr:
     vmid: 130
     vlan_tag: 1030
     bind_mounts:
+      - src: /tank/apps/sonarr
+        dest: /var/lib/sonarr
       - src: /tank/library/series
         dest: /tank/library/series
-      - src: /tank/downloads/sabnzbd/complete
-        dest: /tank/downloads/sabnzbd/complete
+      - src: /tank/downloads/sabnzbd
+        dest: /var/lib/sabnzbd/Downloads
   animarr:
     vmid: 140
     vlan_tag: 1030
     bind_mounts:
+      - src: /tank/apps/animarr
+        dest: /var/lib/sonarr
       - src: /tank/library/animes
         dest: /tank/library/animes
-      - src: /tank/downloads/sabnzbd/complete
-        dest: /tank/downloads/sabnzbd/complete
+      - src: /tank/downloads/sabnzbd
+        dest: /var/lib/sabnzbd/Downloads
   sabnzbd:
     vmid: 150
     vlan_tag: 1030

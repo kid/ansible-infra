@@ -1,0 +1,28 @@
+---
+
+- name: update apt cache
+  become: true
+  apt:
+    update_cache: true
+
+- name: daemon-reload
+  become: true
+  systemd:
+    daemon_reload: yes
+
+- name: enable sonarr
+  become: true
+  service:
+    name: sonarr
+    enabled: true
+
+- name: restart sonarr
+  become: true
+  service:
+    name: sonarr
+    state: restarted
+
+- name: wait for start
+  wait_for:
+    host: localhost
+    port: "{{ sonarr_port }}"

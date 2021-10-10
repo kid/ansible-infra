@@ -1,0 +1,6 @@
+---
+
+sabnzbd_category: movies
+
+root_folders:
+  - /tank/library/movies

@@ -1,0 +1,74 @@
+---
+
+- name: get applications schema
+  uri:
+    url: "{{ api_url }}/applications/schema"
+    return_content: true
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  register: _schema
+
+- debug:
+    var: apps
+
+- name: build application data
+  set_fact:
+    _applications: >-
+      {%- set _applications = [] -%}
+      {%- for app in apps -%}
+      {%-   set _application = (_schema.json | selectattr('name', 'equalto', app.name) | first) -%}
+      {%-   set fields = [] -%}
+      {%-   for field in _application.fields -%}
+      {%-     set _field = { 'name': field.name } -%}
+      {%-     if field.name == 'prowlarrUrl' -%}
+      {%-       do _field.update({ 'value': hostvars['prowlarr']['app_url'] }) -%}
+      {%-     elif field.name == 'baseUrl' -%}
+      {%-       do _field.update({ 'value': hostvars[app.host]['app_url'] }) -%}
+      {%-     elif field.name == 'apiKey' -%}
+      {%-       do _field.update({ 'value': hostvars[app.host]['api_key'] }) -%}
+      {%-     elif field.value is defined -%}
+      {%-       do _field.update({ 'value': field.value }) -%}
+      {%-     endif -%}
+      {%-     do fields.append(_field) -%}
+      {%-   endfor -%}
+      {%-   do _application.update({ 'fields': fields, 'syncLevel': 'fullSync', 'name': app.host }) -%}
+      {%-   do _applications.append(_application) -%}
+      {%- endfor -%}
+      {{ _applications }}
+
+- debug:
+    var: _applications
+
+- name: get applications
+  uri:
+    url: "{{ api_url }}/applications"
+    return_content: true
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  register: _current_applications
+
+- debug:
+    var: _current_applications.json
+
+- name: add application
+  uri:
+    url: "{{ api_url }}/applications"
+    method: POST
+    body_format: json
+    body: "{{ item }}"
+    headers:
+      X-Api-Key: "{{ api_key }}"
+    status_code: 201
+  loop: "{{ _applications }}"
+  when: "item.name not in _current_applications.json | default([], true) | map(attribute='name')"
+
+- name: delete unwanted applications
+  uri:
+    url: "{{ api_url }}/applications/{{ item.id }}"
+    method: DELETE
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  loop: "{{ _current_applications.json }}"
+  when: "item.name not in _applications | map(attribute='name')"
+
+# TODO: handle updates

@@ -1,13 +1,9 @@
 ---
 
-common_apt_repos:
-  - deb https://apt.sonarr.tv/ubuntu focal main
+sonarr_user: animarr
+sonarr_group: animarr
 
-common_apt_keys:
-  - id: 1F4F90DE2A9B4BF8
-    keyserver: hkp://keyserver.ubuntu.com:80
+sabnzbd_category: animes
 
-common_packages:
-  - htop
-  - neovim
-  - sonarr
+root_folders:
+  - /tank/library/animes

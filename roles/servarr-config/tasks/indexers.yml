@@ -1,0 +1,70 @@
+---
+
+- name: get indexer schema
+  uri:
+    url: "{{ api_url }}/indexer/schema"
+    return_content: true
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  register: _schema
+
+- debug:
+    var: indexers
+
+- name: build indexer data
+  set_fact:
+    _indexers: >-
+      {%- set _indexers = [] -%}
+      {%- for indexer in indexers -%}
+      {%-   set _indexer = (_schema.json | selectattr('name', 'equalto', indexer.name) | first) -%}
+      {%-   set fields = [] -%}
+      {%-   for field in _indexer.fields -%}
+      {%-     set _field = { 'name': field.name } -%}
+      {%-     if field.name in indexer -%}
+      {%-       do _field.update({ 'value': indexer[field.name] }) -%}
+      {%-     elif field.value is defined -%}
+      {%-       do _field.update({ 'value': field.value }) -%}
+      {%-     endif -%}
+      {%-     do fields.append(_field) -%}
+      {%-   endfor -%}
+      {%-   do _indexer.update({ 'fields': fields, 'appProfileId': 1 }) -%}
+      {%-   do _indexers.append(_indexer) -%}
+      {%- endfor -%}
+      {{ _indexers | to_json }}
+
+- debug:
+    var: _indexers
+
+- name: get indexers
+  uri:
+    url: "{{ api_url }}/indexer"
+    return_content: true
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  register: _current_indexers
+
+- debug:
+    var: _current_indexers.json
+
+- name: add indexer
+  uri:
+    url: "{{ api_url }}/indexer"
+    method: POST
+    body_format: json
+    body: "{{ item }}"
+    headers:
+      X-Api-Key: "{{ api_key }}"
+    status_code: 201
+  loop: "{{ _indexers }}"
+  when: "item.name not in _current_indexers.json | default([], true) | map(attribute='name')"
+
+- name: delete unwanted indexers
+  uri:
+    url: "{{ api_url }}/indexer/{{ item.id }}"
+    method: DELETE
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  loop: "{{ _current_indexers.json }}"
+  when: "item.name not in indexers | map(attribute='name')"
+
+# TODO: handle updates

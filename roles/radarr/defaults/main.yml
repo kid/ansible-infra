@@ -1,0 +1,8 @@
+---
+
+radarr_branch: master
+
+radarr_user: radarr
+radarr_group: radarr
+
+radarr_port: 7878

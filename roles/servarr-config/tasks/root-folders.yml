@@ -1,0 +1,33 @@
+---
+
+- name: get root folders
+  uri:
+    url: "{{ api_url }}/rootFolder"
+    return_content: true
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  register: _root_folders
+
+- debug:
+    var: _root_folders.json
+
+- name: add missing root folder
+  uri:
+    url: "{{ api_url }}/rootFolder"
+    method: POST
+    status_code: 201
+    body_format: json
+    body:
+      path: "{{ item }}"
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  loop: "{{ root_folders | difference(_root_folders.json | map(attribute='path')) }}"
+
+- name: remove unwanted categories
+  uri:
+    url: "{{ api_url }}/rootFolder/{{ item.id }}"
+    method: DELETE
+    headers:
+      X-Api-Key: "{{ api_key }}"
+  loop: "{{ _root_folders.json }}"
+  when: not (root_folders | select('equalto', item.path))

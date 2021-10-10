@@ -1,0 +1,36 @@
+---
+
+- name: add indexers to prowlarr
+  import_tasks: indexers.yml
+  delegate_to: localhost
+  when: inventory_hostname == 'prowlarr'
+  vars:
+    indexers: "{{ prowlarr_indexers }}"
+
+- name: add applications to prowlarr
+  import_tasks: prowlarr-apps.yml
+  delegate_to: localhost
+  when: inventory_hostname == 'prowlarr'
+  vars:
+    apps:
+      - name: Sonarr
+        host: animarr
+      - name: Sonarr
+        host: sonarr
+      - name: Radarr
+        host: radarr
+
+- name: add sabnzbd download client
+  import_tasks: download-clients.yml
+  delegate_to: localhost
+  when: inventory_hostname in ['prowlarr', 'animarr', 'sonarr', 'radarr']
+  tags:
+    - download-clients
+
+- name: configure root folders
+  import_tasks: root-folders.yml
+  delegate_to: localhost
+  when: inventory_hostname in ['animarr', 'sonarr', 'radarr']
+  tags:
+    - root-folders
+
