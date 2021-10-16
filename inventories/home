@@ -1,0 +1,37 @@
+pve ansible_ssh_host="pve.servers.home.kidibox.net"
+
+[home]
+
+[home:children]
+servers
+media
+
+[servers]
+pve
+
+[servers:vars]
+ansible_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
+
+[media]
+plex
+sonarr
+radarr
+animarr
+prowlarr
+sabnzbd
+
+[media:vars]
+ansible_host="{{ inventory_hostname }}.media.{{ top_level_domain }}"
+
+[containers]
+plex vmid=100
+prowlarr vmid=110
+radarr vmid=120
+sonarr vmid=130
+animarr vmid=140
+prowlarr vmid=110
+sabnzbd vmid=150
+
+[containers:vars]
+searchdomain="{{ domain_name }}"
+

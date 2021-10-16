@@ -1,7 +1,14 @@
 ---
 
-sabnzbd_category: series
+bind_mounts:
+  - src: /tank/apps/sonarr
+    dest: /var/lib/sonarr
+  - src: /tank/library/series
+    dest: /tank/library/series
+  - src: /tank/downloads/sabnzbd
+    dest: /var/lib/sabnzbd/Downloads
 
+sabnzbd_category: series
 
 root_folders:
   - /tank/library/series

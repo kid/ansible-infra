@@ -9,8 +9,6 @@ common_packages:
 common_system_groups: "{{ app_users |  json_query('[].{name: name, gid: gid || uid}') }}"
 common_system_users: "{{ app_users | json_query('[].{name: name, uid: uid, groups: groups}') }}"
 
-top_level_domain: lab.kidibox.net
-
 app_users:
   - uid: 330
     name: sabnzbd

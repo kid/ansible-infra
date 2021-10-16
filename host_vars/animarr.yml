@@ -1,9 +1,19 @@
 ---
 
+bind_mounts:
+  - src: /tank/apps/animarr
+    dest: /var/lib/sonarr
+  - src: /tank/library/animes
+    dest: /tank/library/animes
+  - src: /tank/downloads/sabnzbd
+    dest: /var/lib/sabnzbd/Downloads
+
 sonarr_user: animarr
+
 sonarr_group: animarr
 
 sabnzbd_category: animes
 
 root_folders:
   - /tank/library/animes
+

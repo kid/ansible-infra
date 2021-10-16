@@ -14,3 +14,4 @@ common_packages:
   - python3-proxmoxer
   - htop
   - sudo
+  - neovim

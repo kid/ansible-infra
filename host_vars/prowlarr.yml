@@ -1,3 +1,7 @@
 ---
 
+bind_mounts:
+  - src: /tank/apps/prowlarr
+    dest: /var/lib/prowlarr
+
 sabnzbd_category: prowlarr

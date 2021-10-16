@@ -1,7 +1,99 @@
 ---
 
-- import_playbook: mikrotik.yml
-- import_playbook: proxmox.yml
+- hosts: proxmox_nodes
+  roles:
+    - common
+  tags:
+    - common
+
+- hosts: proxmox_nodes
+  gather_facts: false
+  tags:
+    - zfs
+  tasks:
+    # - name: create zfs pool
+    #   command: zpool create -O compression=lz4 tank /dev/vdb -o ashift=12 creates=/tank
+    #   become: true
+
+    - name: create zfs datasets
+      become: true
+      community.general.zfs:
+        name: "{{ item }}"
+        state: present
+        extra_zfs_properties:
+          acltype: posixacl
+          xattr: sa
+      with_items:
+        - tank/library
+        - tank/library/movies
+        - tank/library/series
+        - tank/library/animes
+        - tank/apps
+        - tank/apps/plex
+        - tank/apps/prowlarr
+        - tank/apps/radarr
+        - tank/apps/sonarr
+        - tank/apps/animarr
+        - tank/downloads
+        - tank/downloads/sabnzbd
+
+    - name: set application permissions
+      become: true
+      file:
+        state: directory
+        path: "{{ item.path is defined | ternary(item.path, '/tank/apps/' + item.app) }}"
+        owner: "{{ item.user | default(item.app) }}"
+        group: "{{ item.group | default(item.app) }}"
+        recurse: true
+      loop:
+        - app: prowlarr
+        - app: animarr
+        - app: animarr
+          path: /tank/library/animes
+        - app: sonarr
+        - app: sonarr
+          path: /tank/library/series
+        - app: radarr
+        - app: radarr
+          path: /tank/library/movies
+        - app: sabnzbd
+        - app: sabnzbd
+          path: /tank/downloads/sabnzbd
+        - app: plex
+
+- hosts: proxmox_nodes
+  gather_facts: true
+  roles:
+    - proxmox
+
+- hosts: need_ansible_prep
+  gather_facts: false
+  tasks:
+    - wait_for_connection: {}
+  vars:
+    ansible_user: root
+    ansible_remote_tmp: /tmp/.root
+
+- hosts: need_ansible_prep
+  vars:
+    ansible_user: root
+    ansible_remote_tmp: /tmp/.root
+  roles:
+    - prep-for-ansible
+
+- hosts: localhost
+  tasks:
+    - meta: refresh_inventory
+
+#
+# - import_playbook: mikrotik.yml
+# - import_playbook: proxmox.yml
+#
+- hosts: '!proxmox_nodes'
+  roles:
+    - common
+  tags:
+    - common
 
 - hosts: sabnzbd
   gather_facts: true

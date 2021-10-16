@@ -10,3 +10,10 @@ common_packages:
   - htop
   - neovim
   - plexmediaserver
+
+bind_mounts:
+  - src: /tank/apps/plex
+    dest: /var/lib/plexmediaserver/Library/Application Support
+  - src: /tank/library
+    dest: /tank/library
+

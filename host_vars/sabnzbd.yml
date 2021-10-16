@@ -1,5 +1,11 @@
 ---
 
+bind_mounts:
+  - src: /tank/apps/sabnzbd
+    dest: /var/lib/sabnzbd
+  - src: /tank/downloads/sabnzbd
+    dest: /var/lib/sabnzbd/Downloads
+
 sabnzbd_categories:
   - animes
   - series

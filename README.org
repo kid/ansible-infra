@@ -1,0 +1,6 @@
+#+TITLE: README
+
+* TODO wait for containers to be abailable when (re)starting them
+* TODO run prep-for-ansible role on newly created containers
+* TODO refresh inventory after creating containers
+

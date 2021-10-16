@@ -1,5 +1,5 @@
 plugin: community.general.proxmox
-url: https://pve.servers.lab.kidibox.net:8006
+url: https://pve.servers.home.kidibox.net:8006
 want_facts: true
 validate_certs: false
 keyed_groups:

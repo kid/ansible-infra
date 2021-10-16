@@ -1,5 +1,16 @@
 ---
 
+- name: configure mirrors
+  replace:
+    path: /etc/apt/sources.list
+    regexp: '^deb http://archive.ubuntu.com/ubuntu (.*)$'
+    replace: 'deb mirror://mirrors.ubuntu.com/mirrors.txt \g<1>'
+  become: true
+  notify:
+    - apt update
+
+- meta: flush_handlers
+
 - name: Install gpg
   become: true
   apt:

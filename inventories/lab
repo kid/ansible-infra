@@ -1,4 +1,5 @@
-pve ansible_ssh_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
+# [lab]
+# pve ansible_ssh_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
 
 # [mikrotik]
 # router ansible_host=172.16.11.10 ansible_user=admin
@@ -9,19 +10,19 @@ pve ansible_ssh_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
 # [lxc:vars]
 # ostemplate=local:vztmpl/debian-11-standard_11.0-1_amd64.tar.gz
 
-[servers]
-pve
-
-[servers:vars]
-ansible_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
-
-[media]
-plex
-sonarr
-radarr
-animarr
-prowlarr
-sabnzbd
-
-[media:vars]
-ansible_host="{{ inventory_hostname }}.media.{{ top_level_domain }}"
+# [servers]
+# pve
+#
+# [servers:vars]
+# ansible_host="{{ inventory_hostname }}.servers.{{ top_level_domain }}"
+#
+# [media]
+# plex
+# sonarr
+# radarr
+# animarr
+# prowlarr
+# sabnzbd
+#
+# [media:vars]
+# ansible_host="{{ inventory_hostname }}.media.{{ top_level_domain }}"

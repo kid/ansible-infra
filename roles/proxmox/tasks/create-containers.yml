@@ -1,0 +1,117 @@
+---
+
+- name: get current images
+  command: pveam list local
+  become: true
+  register: _current_images
+  when:
+    - inventory_hostname in groups['proxmox_nodes']
+
+- name: download images
+  command: "pveam download local {{ item  }}"
+  become: true
+  loop: "{{ groups['containers'] | map('extract', hostvars, 'ostemplate') | unique }}"
+  when:
+    - inventory_hostname in groups['proxmox_nodes']
+    - item not in _current_images.stdout
+
+- name: create container(s)
+  proxmox:
+    api_host: "{{ lookup('env', 'PROXMOX_HOST') }}"
+    api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+    api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+    vmid: "{{ hostvars[item].vmid is defined | ternary(hostvars[item].vmid, omit)  }}"
+    hostname: "{{ hostvars[item].inventory_hostname }}"
+    node: "{{ hostvars[item].node | default(defaults.node) }}"
+    storage: "{{ hostvars[item].storage | default(defaults.storage) }}"
+    unprivileged: "{{ hostvars[item].unprivileged | default(defaults.unprivileged) }}"
+    onboot: "{{ hostvars[item].onboot | default(defaults.onboot) }}"
+    pubkey: "{{ hostvars[item].pubkey | default(defaults.pubkey) }}"
+    searchdomain: "{{ hostvars[item].searchdomain | default(defaults.searchdomain) }}"
+    ostemplate: "local:vztmpl/{{ hostvars[item].ostemplate }}"
+    features: "{{ hostvars[item].features | default(defaults.features) }}"
+    netif: "{{ hostvars[item].netif | default(defaults.netif) }}"
+    state: present
+  loop: "{{ groups['containers'] }}"
+  when:
+    - item not in groups['proxmox_pve_lxc']
+  throttle: 1
+  register: created_containers
+
+- name: add containers to `need_ansible_prep` group
+  add_host:
+    name: "{{ item }}"
+    groups:
+      - need_ansible_prep
+  loop: "{{ groups['containers'] }}"
+  when:
+    - item in created_containers.results | selectattr('changed', 'equalto', true) | map(attribute='item')
+
+- name: create uid map
+  lineinfile:
+    path: "/etc/pve/lxc/{{ hostvars[item].vmid }}.conf"
+    regex: '^lxc.idmap: u'
+    line: 'lxc.idmap: u 0 100000 65535'
+  become: true
+  loop: "{{ groups['containers'] }}"
+  when:
+    - inventory_hostname == hostvars[item].node | default(defaults.node)
+  register: changed_uid
+
+- name: create gid map
+  lineinfile:
+    path: "/etc/pve/lxc/{{ hostvars[item].vmid }}.conf"
+    regex: '^lxc.idmap: g'
+    line: 'lxc.idmap: g 0 100000 65535'
+  become: true
+  loop: "{{ groups['containers'] }}"
+  when:
+    - inventory_hostname == hostvars[item].node | default(defaults.node)
+  register: changed_gid
+
+- name: create bind mounts
+  become: true
+  lineinfile:
+    path: "/etc/pve/lxc/{{ hostvars[item.host].vmid }}.conf"
+    regexp: '^mp{{ item.index }}:'
+    line: "mp{{ item.index }}: {{ item.mount.src }},mp={{ item.mount.dest }}"
+  when:
+    - inventory_hostname == hostvars[item.host].node | default(defaults.node)
+  loop: >-
+    {%- set items = [] -%}
+    {%- for host in groups['containers'] -%}
+    {%-   for item in hostvars[host].bind_mounts | default([]) -%}
+    {%-     do items.append({ 'host': host, 'index': loop.index0, 'mount': item }) -%}
+    {%-   endfor -%}
+    {%- endfor -%}
+    {{ items }}
+  register: changed_bind_mounts
+
+- name: start container(s)
+  proxmox:
+    api_host: "{{ lookup('env', 'PROXMOX_HOST') }}"
+    api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+    api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+    vmid: "{{ hostvars[item].vmid is defined | ternary(hostvars[item].vmid, omit)  }}"
+    hostname: "{{ hostvars[item].inventory_hostname }}"
+    state: started
+  loop: "{{ groups['containers'] }}"
+  when:
+    - item in created_containers.results | selectattr('changed', 'equalto', true) | map(attribute='item') or
+      item in groups['proxmox_all_stopped']
+
+- name: restart container(s)
+  proxmox:
+    api_host: "{{ lookup('env', 'PROXMOX_HOST') }}"
+    api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+    api_password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+    vmid: "{{ hostvars[item].vmid is defined | ternary(hostvars[item].vmid, omit)  }}"
+    hostname: "{{ hostvars[item].inventory_hostname }}"
+    state: started
+  loop: "{{ groups['containers'] }}"
+  when:
+    - item not in created_containers.results | selectattr('changed', 'equalto', true) | map(attribute='item')
+    - item in changed_uid.results | selectattr('changed', 'equalto', true) | map(attribute='item') or
+      item in changed_gid.results | selectattr('changed', 'equalto', true) | map(attribute='item') or
+      item in changed_bind_mounts.results | selectattr('changed', 'equalto', true) | map(attribute='item')
+

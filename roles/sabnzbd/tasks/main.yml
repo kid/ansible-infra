@@ -101,13 +101,13 @@
   uri:
     url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=categories&keyword={{ item | urlencode }}"
     return_content: true
-  loop: "{{ sabnzbd_categories | difference(_categories.json.config.categories | map(attribute='name')) }}"
+  loop: "{{ sabnzbd_categories | difference(_categories.json.config.categories | default([]) | map(attribute='name')) }}"
 
 - name: remove unwanted categories
   uri:
     url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=del_config&section=categories&keyword={{ item | urlencode }}"
     return_content: true
-  loop: "{{ _categories.json.config.categories | map(attribute='name') | difference(sabnzbd_categories + ['*']) }}"
+  loop: "{{ _categories.json.config.categories | default([]) | map(attribute='name') | difference(sabnzbd_categories + ['*']) }}"
 
 - name: get servers
   register: _servers

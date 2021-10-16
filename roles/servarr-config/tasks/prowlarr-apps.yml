@@ -34,7 +34,7 @@
       {%-   do _application.update({ 'fields': fields, 'syncLevel': 'fullSync', 'name': app.host }) -%}
       {%-   do _applications.append(_application) -%}
       {%- endfor -%}
-      {{ _applications }}
+      {{ _applications | list }}
 
 - debug:
     var: _applications

@@ -1,0 +1,13 @@
+---
+
+defaults:
+  node: pve
+  onboot: true
+  unprivileged: true
+  storage: 'local-zfs'
+  ostemplate: local:vztmpl/ubuntu-21.04-standard_21.04-1_amd64.tar.gz
+  pubkey: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+  features:
+    - nesting=1
+  netif:
+    net0: 'name=eth0,bridge=vmbr0,ip=dhcp,ip6=dhcp,tag=30'

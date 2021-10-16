@@ -23,7 +23,7 @@
       {%-   if item.name in overrides -%}
       {%-     do fields.append({ 'name': item.name, 'value': overrides[item.name] }) -%}
       {%-   elif item.label == 'Category' -%}
-      {%-     do fields.append({ 'name': item.name, 'value': category }) -%}
+      {%-     do fields.append({ 'name': item.name, 'value': sabnzbd_category }) -%}
       {%-   else -%}
       {%-     do fields.append({ 'name': item.name }) -%}
       {%-   endif -%}

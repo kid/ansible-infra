@@ -1,5 +1,13 @@
 ---
 
+bind_mounts:
+  - src: /tank/apps/radarr
+    dest: /var/lib/radarr
+  - src: /tank/library/movies
+    dest: /tank/library/movies
+  - src: /tank/downloads/sabnzbd
+    dest: /var/lib/sabnzbd/Downloads
+
 sabnzbd_category: movies
 
 root_folders:

@@ -1,9 +1,9 @@
 ---
 
-- name: set hostname
-  become: true
-  hostname:
-    name: "{{ inventory_hostname }}.{{ domain_name }}"
+# - name: set hostname
+#   become: true
+#   hostname:
+#     name: "{{ inventory_hostname }}.{{ domain_name }}"
 
 - name: create system groups
   become: true
