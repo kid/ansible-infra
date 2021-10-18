@@ -10,4 +10,4 @@ defaults:
   features:
     - nesting=1
   netif:
-    net0: 'name=eth0,bridge=vmbr0,ip=dhcp,ip6=dhcp,tag=30'
+    net0: 'name=eth0,bridge=vmbr0,ip=dhcp,ip6=auto,tag=30'
