@@ -30,6 +30,17 @@
     cache_valid_time: 86400
   become: true
 
+- service:
+    name: mono-xsp4
+    state: stopped
+    enabled: false
+  become: true
+
+- command: pkill -f xsp4
+  register: _pkill
+  become: true
+  failed_when: _pkill.rc not in [0, 1]
+
 - name: get release infos
   uri:
     url: https://services.sonarr.tv/v1/releases
@@ -97,7 +108,7 @@
     - facts
 
 - set_fact:
-    app_url: "http://{{ ansible_fqdn }}:{{ sonarr_port }}"
+    app_url: "{{ caddy_host is defined | ternary('https://' + caddy_host, 'http://' + ansible_fqdn + ':' + sonarr_port | string) }}"
     api_root: "{{ _sonarr_init_data.content | regex_search(\"apiRoot: '(?P<apiRoot>.+)'\", '\\g<apiRoot>') | first }}"
     api_key: "{{ _sonarr_init_data.content | regex_search(\"apiKey: '(?P<apiKey>.+)'\", '\\g<apiKey>') | first }}"
   tags:

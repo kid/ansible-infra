@@ -12,3 +12,5 @@ sabnzbd_category: series
 
 root_folders:
   - /tank/library/series
+
+caddy_proxy_target: http://localhost:8989

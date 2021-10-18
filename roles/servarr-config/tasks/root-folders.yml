@@ -8,9 +8,6 @@
       X-Api-Key: "{{ api_key }}"
   register: _root_folders
 
-- debug:
-    var: _root_folders.json
-
 - name: add missing root folder
   uri:
     url: "{{ api_url }}/rootFolder"

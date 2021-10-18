@@ -85,11 +85,12 @@
   tags:
     - facts
 
-- name: set host whitelist
+- name: set misc config values
   uri:
-    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=misc&keyword=host_whitelist&value={{ value | urlencode }}"
-  vars:
-    value: "{{ ansible_fqdn }},"
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=misc&keyword={{ item.key }}&value={{ item.value | urlencode }}"
+  with_dict:
+    host: 127.0.0.1
+    host_whitelist: "{{ caddy_host | default(ansible_fqdn) }},"
 
 - name: get categories
   register: _categories
@@ -117,11 +118,12 @@
 
 - name: add or update servers
   uri:
-    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=servers&keyword={{ item.host | urlencode }}&host={{ item.host | urlencode }}&username={{ item.username | urlencode }}&password={{ item.password | urlencode }}&priority={{ item.priority | default(0) }}&connection={{ item.connections | default(50) }}&ssl=1&ssl_verify=2"
+    url: "http://localhost:{{ sabnzbd_port }}/api?apikey={{ _sabnzbd_api_key.stdout }}&mode=set_config&section=servers&keyword={{ item.host | urlencode }}&host={{ item.host | urlencode }}&port={{ item.port | default(563) }}&username={{ item.username | urlencode }}&password={{ item.password | urlencode }}&priority={{ item.priority | default(0) }}&connections={{ item.connections | default(50) }}&ssl=1&ssl_verify=2"
   loop: "{{ sabnzbd_servers }}"
   when:
     - not (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host))
       or (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host) | first).host != item.host
+      or (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host) | first).port != item.port | default(563)
       or (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host) | first).username != item.username
       or (_servers.json.config.servers | default([]) | selectattr('name', 'equalto', item.host) | first).priority != (item.priority | default(0))
 
@@ -133,9 +135,9 @@
 
 - name: expose variables for other roles
   set_fact:
-    sabnzbd_host: "{{ ansible_fqdn }}"
-    sabnzbd_port: "{{ sabnzbd_port }}"
+    sabnzbd_host: "{{ caddy_host | default(ansible_fqdn) }}"
+    sabnzbd_port: "{{ caddy_host | ternary(443, sabnzbd_port) }}"
     sabnzbd_api_key: "{{ _sabnzbd_api_key.stdout }}"
-    sabnzbd_use_ssl: false
+    sabnzbd_use_ssl: "{{ caddy_host | ternary(true, false) }}"
   tags:
     - facts

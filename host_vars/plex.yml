@@ -14,6 +14,11 @@ common_packages:
 bind_mounts:
   - src: /tank/apps/plex
     dest: /var/lib/plexmediaserver/Library/Application Support
-  - src: /tank/library
-    dest: /tank/library
+  - src: /tank/library/animes
+    dest: /tank/library/animes
+  - src: /tank/library/series
+    dest: /tank/library/series
+  - src: /tank/library/movies
+    dest: /tank/library/movies
 
+caddy_proxy_target: http://localhost:32400

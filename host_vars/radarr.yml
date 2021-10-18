@@ -12,3 +12,5 @@ sabnzbd_category: movies
 
 root_folders:
   - /tank/library/movies
+
+caddy_proxy_target: http://localhost:7878

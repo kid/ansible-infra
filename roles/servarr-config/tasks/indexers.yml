@@ -8,9 +8,6 @@
       X-Api-Key: "{{ api_key }}"
   register: _schema
 
-- debug:
-    var: indexers
-
 - name: build indexer data
   set_fact:
     _indexers: >-
@@ -32,9 +29,6 @@
       {%- endfor -%}
       {{ _indexers | to_json }}
 
-- debug:
-    var: _indexers
-
 - name: get indexers
   uri:
     url: "{{ api_url }}/indexer"
@@ -42,9 +36,6 @@
     headers:
       X-Api-Key: "{{ api_key }}"
   register: _current_indexers
-
-- debug:
-    var: _current_indexers.json
 
 - name: add indexer
   uri:

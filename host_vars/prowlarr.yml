@@ -5,3 +5,5 @@ bind_mounts:
     dest: /var/lib/prowlarr
 
 sabnzbd_category: prowlarr
+
+caddy_proxy_target: http://localhost:9696

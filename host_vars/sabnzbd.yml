@@ -1,5 +1,8 @@
 ---
 
+sabnzbd_external_url: "sabnzbd.{{ app_domain }}"
+sabnzbd_external_port: 443
+
 bind_mounts:
   - src: /tank/apps/sabnzbd
     dest: /var/lib/sabnzbd
@@ -11,3 +14,6 @@ sabnzbd_categories:
   - series
   - movies
   - prowlarr
+
+caddy_host: "{{ sabnzbd_external_url }}"
+caddy_proxy_target: http://localhost:8080

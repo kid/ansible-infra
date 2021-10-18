@@ -68,7 +68,7 @@
     - facts
 
 - set_fact:
-    app_url: "http://{{ ansible_fqdn }}:{{ prowlarr_port }}"
+    app_url: "{{ caddy_host is defined | ternary('https://' + caddy_host, 'http://' + ansible_fqdn + ':' + prowlarr_port | string) }}"
     api_root: "{{ _prowlarr_init_data.content | regex_search(\"apiRoot: '(?P<apiRoot>.+)'\", '\\g<apiRoot>') | first }}"
     api_key: "{{ _prowlarr_init_data.content | regex_search(\"apiKey: '(?P<apiKey>.+)'\", '\\g<apiKey>') | first }}"
   tags:

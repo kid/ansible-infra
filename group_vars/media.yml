@@ -1,5 +1,32 @@
 ---
 
+app_domain: kidibox.net
 domain_name: "media.{{ top_level_domain }}"
 
 # vlan_tag: 30
+
+caddy_environment_variables:
+  CF_API_TOKEN: "{{ caddy_cloudflare_api_token }}"
+caddy_systemd_capabilities_enabled: true
+caddy_packages:
+  - github.com/caddy-dns/cloudflare
+
+caddy_config: |
+  {{ caddy_host }} {
+    log
+
+    reverse_proxy {{ caddy_proxy_target }} {
+      header_up Host {http.request.host}
+      header_up X-Real-IP {http.request.remote.host}
+      header_up X-Forwarded-For {http.request.remote.host}
+      header_up X-Forwarded-Port {http.request.port}
+      header_up X-Forwarded-Proto {http.request.scheme}
+    }
+
+    tls {
+      dns cloudflare {env.CF_API_TOKEN}
+      resolvers 1.1.1.1
+    }
+  }
+
+caddy_host: "{{ inventory_hostname }}.{{ app_domain }}"

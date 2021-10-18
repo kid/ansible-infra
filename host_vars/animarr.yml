@@ -17,3 +17,4 @@ sabnzbd_category: animes
 root_folders:
   - /tank/library/animes
 
+caddy_proxy_target: http://localhost:8989

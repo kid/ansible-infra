@@ -8,9 +8,6 @@
       X-Api-Key: "{{ api_key }}"
   register: _schema
 
-- debug:
-    var: apps
-
 - name: build application data
   set_fact:
     _applications: >-
@@ -34,10 +31,10 @@
       {%-   do _application.update({ 'fields': fields, 'syncLevel': 'fullSync', 'name': app.host }) -%}
       {%-   do _applications.append(_application) -%}
       {%- endfor -%}
-      {{ _applications | list }}
+      {{ _applications }}
 
 - debug:
-    var: _applications
+    msg: "{{ _applications | type_debug }}"
 
 - name: get applications
   uri:
@@ -46,9 +43,6 @@
     headers:
       X-Api-Key: "{{ api_key }}"
   register: _current_applications
-
-- debug:
-    var: _current_applications.json
 
 - name: add application
   uri:

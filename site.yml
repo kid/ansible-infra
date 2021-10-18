@@ -85,10 +85,6 @@
   tasks:
     - meta: refresh_inventory
 
-#
-# - import_playbook: mikrotik.yml
-# - import_playbook: proxmox.yml
-#
 - hosts: '!proxmox_nodes'
   roles:
     - common
@@ -98,6 +94,8 @@
 - hosts: sabnzbd
   gather_facts: true
   roles:
+    - sabnzbd
+  tags:
     - sabnzbd
 
 - hosts: radarr
@@ -115,8 +113,15 @@
   roles:
     - prowlarr
 
+- hosts: media
+  become: true
+  roles:
+    - caddy_ansible.caddy_ansible
+  tags: caddy
+
 - hosts: prowlarr,animarr,sonarr,radarr
   gather_facts: true
+  become: true
   roles:
     - servarr-config
   tags:

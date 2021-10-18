@@ -56,22 +56,22 @@
   when: "'sabnzbd' not in _download_clients.json | default([], true) | map(attribute='name')"
 
 - set_fact:
-    _sabnzbd_data: "{{ _download_clients.json | selectattr('name', 'equalto', 'sabnzbd') | first }}"
+    _sabnzbd_id: "{{ _download_clients.json | selectattr('name', 'equalto', 'sabnzbd') | map(attribute='id') | first }}"
+    _sabnzbd_fields: "{{ _download_clients.json | selectattr('name', 'equalto', 'sabnzbd') | map(attribute='fields') | first }}"
   when: "'sabnzbd' in _download_clients.json | default([], true) | map(attribute='name')"
 
 - name: update sabnzbd download client
   uri:
-    url: "{{ api_url }}/downloadclient/{{ _download_clients.json | selectattr('name', 'equalto', 'sabnzbd') | map(attribute='id') | first }}"
+    url: "{{ api_url }}/downloadclient/{{ _sabnzbd_id }}"
     method: PUT
     body_format: json
-    body: "{{ body | combine({ 'name': 'sabnzbd', 'enable: true, 'fields': fields, 'id': sabnzbd.id }) }}"
+    body: "{{ body | combine({ 'name': 'sabnzbd', 'enable': true, 'fields': fields, 'id': _sabnzbd_id | int }) }}"
     headers:
       X-Api-Key: "{{ api_key }}"
-    status_code: 201
+    status_code: 202
   when:
-    - _sabnzbd is defined
-    - (_sabnzbd.data | selectattr('name', 'equalto', 'host') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_host'] or
-      (_sabnzbd.data | selectattr('name', 'equalto', 'port') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_port'] or
-      (_sabnzbd.data | selectattr('name', 'equalto', 'apiKey') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_api_key'] or
-      (_sabnzbd.data | selectattr('name', 'equalto', 'useSsl') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_use_ssl'] or
-      (_sabnzbd.data | selectattr('name', 'equalto', 'category') | map(attribute='value') | first) != sabnzbd_category
+    - _sabnzbd_fields is defined
+    - (_sabnzbd_fields | selectattr('name', 'equalto', 'host') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_host'] or
+      (_sabnzbd_fields | selectattr('name', 'equalto', 'port') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_port'] or
+      (_sabnzbd_fields | selectattr('name', 'equalto', 'apiKey') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_api_key'] or
+      (_sabnzbd_fields | selectattr('name', 'equalto', 'useSsl') | map(attribute='value') | first) != hostvars['sabnzbd']['sabnzbd_use_ssl']
